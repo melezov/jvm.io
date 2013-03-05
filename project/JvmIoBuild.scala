@@ -16,12 +16,10 @@ object BuildSettings {
 //  ---------------------------------------------------------------------------
 
 object Dependencies {
-  val scala = "org.scala-lang" % "scala-library" % (_: String)
-  val scalaTest = "org.scalatest" %% "scalatest" % "2.0.M5b"
-
   val ldUtil = libraryDependencies <++= (version, scalaVersion) ( (v, sV) => Seq(
-    scala(sV) % (if (v endsWith "SNAPSHOT") "compile" else "test")
-  , scalaTest % "test"
+    "org.scala-lang" % "scala-library" % sV % (if (v endsWith "SNAPSHOT") "compile" else "test")
+  , "org.scalatest" %% "scalatest" % "2.0.M5b" % "test"
+  , "junit" % "junit" % "4.11" % "test"
   ))
 }
 
