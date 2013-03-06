@@ -145,4 +145,48 @@ class QuoteFeatureSpec extends FeatureSpec with GivenWhenThen with MustMatchers 
       escape("""It's '\OK\'!""", '\'', '\\') must equal ("""'It\'s \'\\OK\\\'!'""")
     }
   }
+
+
+
+  feature("jvm.io.Join"){
+
+    def testBuildURI(uris: Array[String], separator: Character) =
+      uris.map(_ replace(separator.toString, separator.toString * 2)).mkString(separator.toString)
+
+    scenario("Test 1 : null array argument") {
+      Join.escaping(null, 'x') must equal (null)
+    }
+
+    scenario("Test 2.1 : array argunent contains null") {
+      Join.escaping(Array(null, "fx"), 'x') must equal ("""fxx""")
+    }
+
+    scenario("Test 2.2 : array argunent contains multiple nulls") {
+      Join.escaping(Array(null, "ax", null, "bx", null, "cx", "dx", null), 'x') must equal ("""axxxbxxxcxxxdxx""")
+    }
+
+    scenario("Test 3 : array argument does not contain separator") {
+      Join.escaping(Array("ab", "f"), 'x') must equal ("""abxf""")
+    }
+
+    scenario("Test 4 : array argument size = 0") {
+      Join.escaping(Array(), 'x') must equal ("""""")
+    }
+
+    scenario("Test 5 : normal array argument") {
+      Join.escaping(Array("axb", "fx"), 'x') must equal ("""axxbxfxx""")
+    }
+
+    scenario("Test 6 : array argument contains empty string") {
+      Join.escaping(Array("", "fx"), 'x') must equal ("""xfxx""")
+    }
+
+    scenario("Joining with a regular expression special character") {
+      Given("a string consisting of some special characters")
+      When("it is escaped via that character")
+      Then("the special characters must be duplicated")
+      Join.escaping(Array("a+b","c+d"), '+') must equal ("""a++b+c++d""")
+    }
+  }
+
 }
