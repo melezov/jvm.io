@@ -148,21 +148,22 @@ class QuoteFeatureSpec extends FeatureSpec with GivenWhenThen with MustMatchers 
 
 
 
-  feature("jvm.io.Join"){
+  feature("jvm.io.Join.escaping()"){
 
     def testBuildURI(uris: Array[String], separator: Character) =
       uris.map(_ replace(separator.toString, separator.toString * 2)).mkString(separator.toString)
 
-    scenario("Test 1 : null array argument") {
+    scenario("Escaping is a stable function") {
+      Given("a null input string")
+      When("it is escaped via a character")
+      Then("a null string must be returned")
       Join.escaping(null, 'x') must equal (null)
     }
 
-    scenario("Test 2.1 : array argunent contains null") {
-      Join.escaping(Array(null, "fx"), 'x') must equal ("""fxx""")
-    }
-
-    scenario("Test 2.2 : array argunent contains multiple nulls") {
-      Join.escaping(Array(null, "ax", null, "bx", null, "cx", "dx", null), 'x') must equal ("""axxxbxxxcxxxdxx""")
+    scenario("Escaping an array contains null") {
+      intercept[NullPointerException] {
+        Join.escaping(Array(null, "fx"), 'x')
+      }
     }
 
     scenario("Test 3 : array argument does not contain separator") {
@@ -170,7 +171,9 @@ class QuoteFeatureSpec extends FeatureSpec with GivenWhenThen with MustMatchers 
     }
 
     scenario("Test 4 : array argument size = 0") {
-      Join.escaping(Array(), 'x') must equal ("""""")
+      intercept[IllegalArgumentException] {
+        Join.escaping(Array(), 'x')
+      }
     }
 
     scenario("Test 5 : normal array argument") {
@@ -181,7 +184,7 @@ class QuoteFeatureSpec extends FeatureSpec with GivenWhenThen with MustMatchers 
       Join.escaping(Array("", "fx"), 'x') must equal ("""xfxx""")
     }
 
-    scenario("Joining with a regular expression special character") {
+    scenario("Test 7 : Joining with a regular expression special character") {
       Given("a string consisting of some special characters")
       When("it is escaped via that character")
       Then("the special characters must be duplicated")
@@ -189,4 +192,91 @@ class QuoteFeatureSpec extends FeatureSpec with GivenWhenThen with MustMatchers 
     }
   }
 
+  feature("jvm.io.Join.buildSimpleUriList()") {
+
+    scenario("1 : null array argument") {
+      Join.buildSimpleUriList(null) must equal (null)
+    }
+
+    scenario("2 : empty array") {
+      intercept[IllegalArgumentException] {
+        Join.buildSimpleUriList(Array())
+      }
+    }
+
+    scenario("3 : array contains null") {
+      intercept[NullPointerException] {
+        Join.buildSimpleUriList(Array("",null))
+      }
+    }
+
+    scenario("4 : array contains empty string") {
+        Join.buildSimpleUriList(Array("","//","'")) must equal ("""'','/',''''""")
+    }
+
+    scenario("5 : simple build uri test without special chars") {
+      Join.buildSimpleUriList(Array("ab","cd")) must equal ("""'ab','cd'""")
+    }
+
+    scenario("6 : simple join uri test with both special chars") {
+      Join.buildSimpleUriList(Array("a'b","c//d")) must equal ("""'a''b','c/d'""")
+    }
+
+    scenario("7 : test a//b , a'//b , 'ab// , //ab', // ") {
+      Join.buildSimpleUriList(Array("a//b","a'//b","'ab//","//ab'","//")) must equal ("""'a/b','a''/b','''ab/','/ab''','/'""")
+    }
+  }
+
+  feature("jvm.io.Join.buildCompositeUriList()") {
+    scenario("1 : null array argument") {
+      Join.buildCompositeUriList(null) must equal (null)
+    }
+
+    scenario("2 : empty array") {
+      intercept[IllegalArgumentException] {
+        Join.buildCompositeUriList(Array())
+      }
+    }
+
+    scenario("3 : array contains null") {
+      intercept[NullPointerException] {
+        Join.buildCompositeUriList(Array("",null))
+      }
+    }
+    scenario("4.1 : array contains empty string") {
+      Join.buildCompositeUriList(Array("")) must equal ("""('')""")
+    }
+
+    scenario("4.2 : array contains ' character") {
+      Join.buildCompositeUriList(Array("a'b")) must equal ("""('a''b')""")
+    }
+
+    scenario("4.3 : array contains // characters") {
+      Join.buildCompositeUriList(Array("a//b")) must equal ("""('a/b')""")
+    }
+
+    scenario("4.4 : array contains / character") {
+      Join.buildCompositeUriList(Array("a/b")) must equal ("""('a','b')""")
+    }
+
+    scenario("5 : simple test without special chars") {
+      Join.buildCompositeUriList(Array("ab","cd")) must equal ("""('ab'),('cd')""")
+    }
+
+    scenario("6 : simple test with special chars") {
+      Join.buildCompositeUriList(Array("a'b","c//d","e/f")) must equal ("""('a''b'),('c/d'),('e','f')""")
+    }
+
+    scenario("7 : test / at both beginning and end, // and /'/ ") {
+      Join.buildCompositeUriList(Array("/a//b//c/","/'/")) must equal ("""('','a/b/c',''),('','''','')""")
+    }
+
+    scenario("8 : more complex test ") {
+      Join.buildCompositeUriList(Array("a//b","//","/c//d/","/")) must equal ("""('a/b'),('/'),('','c/d',''),('','')""")
+    }
+
+    scenario("9 : //a// and /a/ and 'a' ") {
+      Join.buildCompositeUriList(Array("//a//","/a/","'a'")) must equal ("""('/a/'),('','a',''),('''a''')""")
+    }
+  }
 }
