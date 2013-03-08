@@ -146,7 +146,8 @@ public class Join {
                 if (ch == skipNext) {
                     if (j < len - 1) { // if not last character in string
                         if (chars[j + 1] == skipNext) {
-                            cnt -= 3; // contract // to /
+                            cnt -= 1; // contract // to /
+                            j++;
                         } else {
                             cnt += 2; // add separator instead of /
                         }

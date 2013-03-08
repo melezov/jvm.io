@@ -129,12 +129,12 @@ class JoinFeatureSpec extends FeatureSpec with GivenWhenThen with MustMatchers {
       buildCompositeUriList(Array("a'b","c//d","e/f")) must equal ("""('a''b'),('c/d'),('e','f')""")
     }
 
-    scenario("7 : test / at both beginning and end, // and /'/ ") {
+    scenario("7 : test / at both beginning and end, multiple // and /'/ ") {
       buildCompositeUriList(Array("/a//b//c/","/'/")) must equal ("""('','a/b/c',''),('','''','')""")
     }
 
-    scenario("8 : more complex test ") {
-      buildCompositeUriList(Array("a//b","//","/c//d/","/")) must equal ("""('a/b'),('/'),('','c/d',''),('','')""")
+    scenario("8 : more complex test (/////,/)") {
+      buildCompositeUriList(Array("/////","/")) must equal ("""('//',''),('','')""")
     }
 
     scenario("9 : //a// and /a/ and 'a' ") {
