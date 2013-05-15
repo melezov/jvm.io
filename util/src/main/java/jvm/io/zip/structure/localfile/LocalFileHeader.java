@@ -1,10 +1,10 @@
 package jvm.io.zip.structure.localfile;
 
-import jvm.io.zip.util.ByteBuffer;
+import jvm.io.zip.structure.ByteArrayOffsetObject;
+import jvm.io.zip.structure.ByteArrayRange;
 
-public class LocalFileHeader extends ByteBuffer {
-
-  public static final byte[] HeaderSignature = { 0x04, 0x03, 0x4b, 0x50 };
+public class LocalFileHeader extends ByteArrayOffsetObject {
+  public static final byte[] HeaderSignature = { 0x50, 0x4b, 0x03, 0x04 };
 
   // OFFSETS
   private static final int OFF_CompressedData_Length  = 18;
@@ -16,10 +16,9 @@ public class LocalFileHeader extends ByteBuffer {
   private final int OFF_CompressedData()  { return  OFF_ExtraField() + getExtraFieldLength(); }
   // END OFFSETS
 
-
+  // LENGHTS
   public LocalFileHeader(final byte[] body, final int offset) {
     super(body, offset);
-    this.length = 30 + getFileNameLength() + getExtraFieldLength() + getCompressedDataLength();
   }
 
   private int getFileNameLength() {
@@ -34,8 +33,29 @@ public class LocalFileHeader extends ByteBuffer {
     return getInt(OFF_CompressedData_Length);
   }
 
-  public ByteBuffer getCompressedData() {
-    return getByteBuffer(OFF_CompressedData(), getCompressedDataLength());
+  private int getOnlyHeaderLength() {
+    return 30 + getFileNameLength() + getExtraFieldLength();
   }
 
+  public int getLength() {
+    return getOnlyHeaderLength() + getCompressedDataLength();
+  }
+  // END LENGHTS
+
+  public ByteArrayRange getOnlyHeaderData() {
+    return getByteRange(offset, getOnlyHeaderLength());
+  }
+
+  public ByteArrayRange getCompressedData() {
+    return getByteRange(OFF_CompressedData(), getCompressedDataLength());
+  }
+
+  public ByteArrayRange getFileName() {
+    return getByteRange(OFF_FileName, getFileNameLength());
+  }
+
+  @Override
+  public String toString() {
+    return getFileName().toString();
+  }
 }

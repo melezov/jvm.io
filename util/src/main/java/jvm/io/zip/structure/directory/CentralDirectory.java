@@ -1,22 +1,29 @@
 package jvm.io.zip.structure.directory;
 
-import jvm.io.zip.util.ByteBuffer;
+import jvm.io.zip.structure.ByteArrayOffsetObject;
 
-public class CentralDirectory extends ByteBuffer {
+public class CentralDirectory extends ByteArrayOffsetObject {
 
-  public final CentralDirectoryFileRecord[] Records;
-  public final CentralDirectoryEndRecord EndRecord;
+  public final CentralDirectoryFileRecord[] records;
+  public final CentralDirectoryEndRecord endRecord;
 
   public CentralDirectory(final CentralDirectoryEndRecord cde) {
-    super(cde.body, cde.getCentralDirectoryOffset());
-    this.EndRecord = cde;
+    super(cde.body, cde.getCentralDirectoryStartOffset());
+    this.endRecord = cde;
 
     // lets get records
-    int recordsCount = EndRecord.getCentralDirectoryNumberOfEntrys();
-    this.Records = new CentralDirectoryFileRecord[recordsCount];
+    int recordsCount = endRecord.getCentralDirectoryNumberOfEntrys();
+    this.records = new CentralDirectoryFileRecord[recordsCount];
 
-    for (int i = 0; i < recordsCount; i++) {
-      Records[i] = new CentralDirectoryFileRecord()
+    records[0] = new CentralDirectoryFileRecord(body, endRecord.getCentralDirectoryStartOffset());
+    int offsetSum = 0;
+    for (int i = 1; i < recordsCount; i++) {
+      offsetSum += records[i-1].getLength();
+      records[i] = new CentralDirectoryFileRecord(body, offset + offsetSum);
     }
+  }
+
+  public int getLength() {
+    return endRecord.getCentralDirectoryLength();
   }
 }

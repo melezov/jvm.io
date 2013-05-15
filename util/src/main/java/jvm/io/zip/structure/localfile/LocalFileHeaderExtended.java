@@ -1,10 +1,10 @@
 package jvm.io.zip.structure.localfile;
 
-import jvm.io.zip.util.ByteBuffer;
+import jvm.io.zip.structure.ByteArrayOffsetObject;
 
-public class LocalFileHeaderExtended extends ByteBuffer {
+public class LocalFileHeaderExtended extends ByteArrayOffsetObject {
 
-  public static final byte[] HeaderSignature = { 0x08, 0x07, 0x4b, 0x50 }; // Optional
+  public static final byte[] HeaderSignature = { 0x50, 0x4b, 0x07, 0x08 }; // Optional
 
   // OFFSETS
   private final int OFF_CRC32; // depending on type of ELFH can start at 0 or at 4 offset
@@ -13,8 +13,8 @@ public class LocalFileHeaderExtended extends ByteBuffer {
   // END OFFSETS
 
 
-  public LocalFileHeaderExtended(final byte[] body, final int offset, final int length) {
-    super(body, offset, length);
+  public LocalFileHeaderExtended(final byte[] body, final int offset) {
+    super(body, offset);
     if (this.startsWith(HeaderSignature)) {
       OFF_CRC32 = 4;
     } else {
@@ -32,5 +32,9 @@ public class LocalFileHeaderExtended extends ByteBuffer {
 
   public int getUnCompressedFileLength() {
     return getInt(OFF_UnCompressed_Length());
+  }
+
+  public int getLength() {
+    return OFF_CRC32 + 12;
   }
 }
