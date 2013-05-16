@@ -1,17 +1,20 @@
-package jvm.io.zip.structure;
+package io.jvm.zip.bytearray;
 
-import jvm.io.zip.util.ByteArrayTool;
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 
-public abstract class ByteArrayOffsetObject {
+import io.jvm.zip.bytearray.tools.ByteArrayTool;
+
+public abstract class OffsetObject {
   public final byte[] body;
   public final int offset;
 
-  public ByteArrayOffsetObject(final byte[] body, final int offset) {
+  public OffsetObject(final byte[] body, final int offset) {
     this.body = body;
     this.offset = offset;
   }
 
-  public ByteArrayOffsetObject(final byte[] body) {
+  public OffsetObject(final byte[] body) {
     this(body, 0);
   }
 
@@ -25,6 +28,22 @@ public abstract class ByteArrayOffsetObject {
     return ByteArrayTool.readIntLittleEndian(body, offset + index);
   }
 
+  protected String getString(final int index, final int length) throws IllegalArgumentException, UnsupportedEncodingException {
+    if (index >= body.length - length) throw new IllegalArgumentException();
+    return new String(getByteRange(index, length), System.getProperty("file.encoding"));
+  }
+
+  protected void setShort(final int index, final int value) throws IllegalArgumentException {
+    if (index >= body.length - 2) throw new IllegalArgumentException();
+    ByteArrayTool.writeShortLittleEndian(body, offset + index, (short)value);
+  }
+
+  protected void setInt(final int index, final int value) throws IllegalArgumentException {
+    if (index >= body.length - 4) throw new IllegalArgumentException();
+    ByteArrayTool.writeIntLittleEndian(body, offset + index, value);
+  }
+
+
   public boolean startsWith(final byte[] pattern) throws IllegalArgumentException {
     if (pattern.length > body.length) throw new IllegalArgumentException();
     if (body[offset + 0] == pattern[0]) {
@@ -35,8 +54,8 @@ public abstract class ByteArrayOffsetObject {
     return true;
   }
 
-  protected ByteArrayRange getByteRange(final int index, final int length) {
-    return new ByteArrayRange(body, offset + index, length);
+  protected byte[] getByteRange(final int index, final int length) {
+    return Arrays.copyOfRange(body, offset + index, length);
   }
 
   // compares bytes in bytebuffer starting at offset with bytes given as parameter
@@ -60,7 +79,7 @@ public abstract class ByteArrayOffsetObject {
           }
         }
 
-        if (found) return pos;
+        if (found) return pos; // return position at witch first occurence of pattern was found
       }
 
     }

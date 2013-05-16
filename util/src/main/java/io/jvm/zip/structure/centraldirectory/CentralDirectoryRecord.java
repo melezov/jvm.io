@@ -1,9 +1,8 @@
-package jvm.io.zip.structure.directory;
+package io.jvm.zip.structure.centraldirectory;
 
-import jvm.io.zip.structure.ByteArrayOffsetObject;
-import jvm.io.zip.structure.ByteArrayRange;
+import io.jvm.zip.bytearray.OffsetObject;
 
-public class CentralDirectoryFileRecord extends ByteArrayOffsetObject {
+public class CentralDirectoryRecord extends OffsetObject {
   public static final byte[] HeaderSignature = { 0x50, 0x4b, 0x01, 0x02 };
 
   // OFFSETS
@@ -18,7 +17,7 @@ public class CentralDirectoryFileRecord extends ByteArrayOffsetObject {
   // END OFFSETS
 
 
-  public CentralDirectoryFileRecord(final byte[] body, final int offset) {
+  public CentralDirectoryRecord(final byte[] body, final int offset) {
     super(body, offset);
   }
 
@@ -38,15 +37,15 @@ public class CentralDirectoryFileRecord extends ByteArrayOffsetObject {
     return getInt(OFF_LocalHeader);
   }
 
-  public ByteArrayRange getFileName() {
+  public Range getFileName() {
     return getByteRange(OFF_FileName, getFileNameLength());
   }
 
-  public ByteArrayRange getExtraField() {
+  public Range getExtraField() {
     return getByteRange(OFF_ExtraField(), getExtraFieldLength());
   }
 
-  public ByteArrayRange getFileComment() {
+  public Range getFileComment() {
     return getByteRange(OFF_FileComment(), getFileCommentLength());
   }
 

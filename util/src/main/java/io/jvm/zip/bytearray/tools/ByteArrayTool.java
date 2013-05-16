@@ -1,8 +1,10 @@
-package jvm.io.zip.util;
+package io.jvm.zip.bytearray.tools;
+
+import java.util.zip.CRC32;
 
 public class ByteArrayTool {
-  public static byte[] ConcatArrays(byte[]...arrays)
-  {
+
+  public static byte[] ConcatArrays(byte[]...arrays) {
       // Determine the length of the result array
       int totalLength = 0;
       for (int i = 0; i < arrays.length; i++)
@@ -83,7 +85,6 @@ public class ByteArrayTool {
   public static final void writeShortLittleEndian(byte[] array, int pos, short value) {
     array[pos +1] = (byte) (value >>> 8);
     array[pos ] = (byte) (value & 0xFF);
-
   }
 
   public static final void writeIntLittleEndian(byte[] array, int pos,int value) {
@@ -91,7 +92,6 @@ public class ByteArrayTool {
     array[pos+2] = (byte) (value >>>16);
     array[pos+1] = (byte) (value >>>8);
     array[pos] = (byte) (value &0xFF);
-
   }
 
   public static void writeLongLittleEndian(byte[] array, int pos, long value){
@@ -105,20 +105,9 @@ public class ByteArrayTool {
     array[pos] = (byte) (value &0xFF);
   }
 
-  /**
-   * Converts a char array to byte array
-   * @param charArray
-   * @return byte array representation of the input char array
-   */
-  public static byte[] convertCharArrayToByteArray(char[] charArray) {
-    if (charArray == null) {
-      throw new NullPointerException();
-    }
-
-    byte[] bytes = new byte[charArray.length];
-    for(int i=0;i<charArray.length;i++) {
-       bytes[i] = (byte) charArray[i];
-    }
-    return bytes;
+  public static int computeCRC32(byte[] bytes) {
+    CRC32 crc = new CRC32();
+    crc.update(bytes, 0, bytes.length);
+    return (int)crc.getValue();
   }
 }

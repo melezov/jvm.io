@@ -1,8 +1,8 @@
-package jvm.io.zip.structure.localfile;
+package io.jvm.zip.structure.localfile;
 
-import jvm.io.zip.structure.ByteArrayOffsetObject;
+import io.jvm.zip.bytearray.OffsetObject;
 
-public class LocalFileHeaderExtended extends ByteArrayOffsetObject {
+public class LocalFileRecordExt extends OffsetObject {
 
   public static final byte[] HeaderSignature = { 0x50, 0x4b, 0x07, 0x08 }; // Optional
 
@@ -13,7 +13,7 @@ public class LocalFileHeaderExtended extends ByteArrayOffsetObject {
   // END OFFSETS
 
 
-  public LocalFileHeaderExtended(final byte[] body, final int offset) {
+  public LocalFileRecordExt(final byte[] body, final int offset) {
     super(body, offset);
     if (this.startsWith(HeaderSignature)) {
       OFF_CRC32 = 4;

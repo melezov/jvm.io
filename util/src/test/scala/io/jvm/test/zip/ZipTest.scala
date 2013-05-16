@@ -4,8 +4,8 @@ package zip
 import org.scalatest._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
-import jvm.io.zip.ZipReader
 import java.io.FileInputStream
+import io.jvm.zip.reader.ZipReader
 
 
 @RunWith(classOf[JUnitRunner])
