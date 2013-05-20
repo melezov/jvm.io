@@ -11,12 +11,24 @@ object BuildSettings {
   , version := "0.0.1-SNAPSHOT"
   , initialCommands := "import io.jvm._"
   )
+
+  val bsXml = javaSettings ++ Seq(
+    name    := "jvm-xml"
+  , version := "0.0.1-SNAPSHOT"
+  , initialCommands := "import io.jvm._"
+  )
 }
 
 //  ---------------------------------------------------------------------------
 
 object Dependencies {
   val ldUtil = libraryDependencies <++= (version, scalaVersion) ( (v, sV) => Seq(
+    "org.scala-lang" % "scala-library" % sV % (if (v endsWith "SNAPSHOT") "compile" else "test")
+  , "org.scalatest" %% "scalatest" % "2.0.M5b" % "test"
+  , "junit" % "junit" % "4.11" % "test"
+  ))
+
+  val ldXml = libraryDependencies <++= (version, scalaVersion) ( (v, sV) => Seq(
     "org.scala-lang" % "scala-library" % sV % (if (v endsWith "SNAPSHOT") "compile" else "test")
   , "org.scalatest" %% "scalatest" % "2.0.M5b" % "test"
   , "junit" % "junit" % "4.11" % "test"
@@ -34,6 +46,12 @@ object JvmIoBuild extends Build {
     "util"
   , file("util")
   , settings = bsUtil :+ ldUtil
+  )
+
+  lazy val xml = Project(
+    "xml"
+  , file("xml")
+  , settings = bsXml :+ ldXml
   )
 }
 
@@ -123,7 +141,7 @@ object Default {
     , crossScalaVersions := Seq(
         "2.8.0", "2.8.1", "2.8.2", "2.8.3"
       , "2.9.0", "2.9.0-1", "2.9.1", "2.9.1-1", "2.9.2", "2.9.3"
-      , "2.10.1-RC2"
+      , "2.10.1"
       )
     , scalacOptions <<= scalaVersion map ( sV => scala2_8 ++ (sV match {
           case x if (x startsWith "2.10.")                => scala2_9 ++ scala2_9_1 ++ scala2_10
