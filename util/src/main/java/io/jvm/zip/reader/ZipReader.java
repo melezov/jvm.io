@@ -1,13 +1,13 @@
 package io.jvm.zip.reader;
 
 
-import io.jvm.zip.bytearray.OffsetObject;
+import io.jvm.zip.bytearray.OffsetRecord;
 import io.jvm.zip.reader.centraldirectory.CentralDirectoryReader;
 import io.jvm.zip.reader.localfile.LocalFileRecordReader;
 import io.jvm.zip.structure.centraldirectory.CentralDirectoryEnd;
 import io.jvm.zip.structure.centraldirectory.CentralDirectoryRecord;
 
-public class ZipReader extends OffsetObject {
+public class ZipReader extends OffsetRecord {
 
   public final LocalFileRecordReader[] localFileRecords;
   public final CentralDirectoryReader centralDirectory;
@@ -44,5 +44,9 @@ public class ZipReader extends OffsetObject {
     if (endPos < 0) endPos = 0; // end position cant be smaller than 0
 
     return searchBackwards(CentralDirectoryEnd.HeaderSignature, startPos, endPos);
+  }
+
+  public int getLength() {
+    return body.length;
   }
 }

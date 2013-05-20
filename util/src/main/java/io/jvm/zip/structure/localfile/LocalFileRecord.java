@@ -1,13 +1,12 @@
 package io.jvm.zip.structure.localfile;
 
-import java.io.UnsupportedEncodingException;
+import io.jvm.zip.bytearray.OffsetRecord;
 
-import io.jvm.zip.bytearray.OffsetObject;
-
-public class LocalFileRecord extends OffsetObject {
+public class LocalFileRecord extends OffsetRecord {
   public static final byte[] HeaderSignature = { 0x50, 0x4b, 0x03, 0x04 };
 
   // OFFSETS
+  private static final int OFF_CompressionMethod        =  8;
   private static final int OFF_CRC32                    = 14;
   private static final int OFF_CompressedData_Length    = 18;
   private static final int OFF_UnCompressedData_Length  = 18;
@@ -37,7 +36,7 @@ public class LocalFileRecord extends OffsetObject {
     return getInt(OFF_CompressedData_Length);
   }
 
-  private int getOnlyHeaderLength() {
+  public int getOnlyHeaderLength() {
     return 30 + getFileNameLength() + getExtraFieldLength();
   }
 
@@ -46,42 +45,59 @@ public class LocalFileRecord extends OffsetObject {
   }
   // END LENGHTS
 
-  // WRITE
-  public void setCRC32(final int CRC32) {
+  private int getCRC32() {
+    return getShort(OFF_CRC32);
+  }
+
+  private void setCRC32(final int CRC32) {
     setShort(OFF_CRC32, CRC32);
   }
 
-  public void setCompressedDataLength(final int length) {
+  private void setCompressedDataLength(final int length) {
     setShort(OFF_CompressedData_Length, length);
   }
 
   public void setUnCompressedDataLength(final int length) {
     setShort(OFF_UnCompressedData_Length, length);
   }
-  // END WRITE
 
-  // RANGES
-  public byte[] getOnlyHeaderData() {
-    return getByteRange(offset, getOnlyHeaderLength());
+  private int getCompressedMethod() {
+    return getShort(OFF_CompressionMethod);
   }
 
-  public byte[] getCompressedData() {
+  private void setCompressedMethod(final int method) {
+    setShort(OFF_CompressionMethod, method);
+  }
+
+  private byte[] getOnlyCompressedData() {
     return getByteRange(OFF_CompressedData(), getCompressedDataLength());
   }
 
-  private String getFileName() {
-    try {
-      return getString(OFF_FileName, getFileNameLength());
-    } catch (UnsupportedEncodingException e) {
-      e.printStackTrace();
-      return null;
+  private void setCompressedData(final byte[] data) throws IllegalArgumentException {
+    if (data.length > getCompressedDataLength()) throw new IllegalArgumentException();
+    int offset = OFF_CompressedData();
+    for (int i = 0; i < data.length; i++) {
+      body[offset + i] = data[i];
+    }
+
+  }
+
+  public CompressedData getCompressedDataObject() {
+    return new CompressedData(getOnlyCompressedData(), getCompressedMethod(), getCRC32());
+  }
+
+  public void setCompressedDataObject(final CompressedData data) {
+    if (data != null) {
+      setCRC32(data.CRC32);
+      setCompressedMethod(data.Method);
+      setCompressedDataLength(data.Data.length);
+      setCompressedData(data.Data);
     }
   }
 
-  public byte[] getBytes() {
-    return getByteRange(offset, getLength());
+  private String getFileName() {
+      return getString(OFF_FileName, getFileNameLength());
   }
-  // END RANGES
 
   @Override
   public String toString() {

@@ -1,10 +1,10 @@
 package io.jvm.zip.reader.centraldirectory;
 
-import io.jvm.zip.bytearray.OffsetObject;
+import io.jvm.zip.bytearray.OffsetRecord;
 import io.jvm.zip.structure.centraldirectory.CentralDirectoryEnd;
 import io.jvm.zip.structure.centraldirectory.CentralDirectoryRecord;
 
-public class CentralDirectoryReader extends OffsetObject {
+public class CentralDirectoryReader extends OffsetRecord {
 
   public final CentralDirectoryRecord[] records;
   public final CentralDirectoryEnd endRecord;

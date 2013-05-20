@@ -1,11 +1,15 @@
 package io.jvm.zip.structure.centraldirectory;
 
-import io.jvm.zip.bytearray.OffsetObject;
+import io.jvm.zip.bytearray.OffsetRecord;
 
-public class CentralDirectoryRecord extends OffsetObject {
+public class CentralDirectoryRecord extends OffsetRecord {
   public static final byte[] HeaderSignature = { 0x50, 0x4b, 0x01, 0x02 };
 
   // OFFSETS
+  private static final int OFF_CompressionMethod  = 10;
+  private static final int OFF_CRC32              = 16;
+  private static final int OFF_CompressedSize     = 16;
+
   private static final int OFF_FileName_Length    = 28;
   private static final int OFF_ExtraField_Length  = 30;
   private static final int OFF_FileComment_Length = 32;
@@ -37,16 +41,28 @@ public class CentralDirectoryRecord extends OffsetObject {
     return getInt(OFF_LocalHeader);
   }
 
-  public Range getFileName() {
-    return getByteRange(OFF_FileName, getFileNameLength());
+  public void setLocalFileHeaderOffset(final int offset) {
+    setInt(OFF_LocalHeader, offset);
   }
 
-  public Range getExtraField() {
-    return getByteRange(OFF_ExtraField(), getExtraFieldLength());
+  public void setCompressionMethod(final int method) {
+    setShort(OFF_CompressionMethod, method);
   }
 
-  public Range getFileComment() {
-    return getByteRange(OFF_FileComment(), getFileCommentLength());
+  public void setCRC32(final int crc32) {
+    setInt(OFF_CRC32, crc32);
+  }
+
+  public void setCompressedSize(final int size) {
+    setInt(OFF_CompressedSize, size);
+  }
+
+  public String getFileName() {
+    return getString(OFF_FileName, getFileNameLength());
+  }
+
+  public String getFileComment() {
+    return getString(OFF_FileComment(), getFileCommentLength());
   }
 
   public int getLength() {
@@ -55,6 +71,6 @@ public class CentralDirectoryRecord extends OffsetObject {
 
   @Override
   public String toString() {
-    return getFileName().toString();
+    return getFileName();
   }
 }

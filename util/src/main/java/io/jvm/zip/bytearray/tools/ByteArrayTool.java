@@ -105,9 +105,10 @@ public class ByteArrayTool {
     array[pos] = (byte) (value &0xFF);
   }
 
-  public static int computeCRC32(byte[] bytes) {
+  public static int computeCRC32(final byte[] bytes, int offset, int length) {
     CRC32 crc = new CRC32();
-    crc.update(bytes, 0, bytes.length);
+    crc.update(bytes, offset, length);
     return (int)crc.getValue();
   }
+
 }

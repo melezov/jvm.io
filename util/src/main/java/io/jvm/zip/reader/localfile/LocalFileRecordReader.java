@@ -1,29 +1,29 @@
 package io.jvm.zip.reader.localfile;
 
-import io.jvm.zip.bytearray.OffsetObject;
+import io.jvm.zip.bytearray.OffsetRecord;
 import io.jvm.zip.structure.centraldirectory.CentralDirectoryRecord;
 import io.jvm.zip.structure.localfile.LocalFileRecordExt;
 import io.jvm.zip.structure.localfile.LocalFileRecord;
 
-public class LocalFileRecordReader extends OffsetObject {
+public class LocalFileRecordReader extends OffsetRecord {
 
-  public final LocalFileRecord    localFile;
-  public final LocalFileRecordExt localFileExt;
+  public final LocalFileRecord    localFileRecord;
+  public final LocalFileRecordExt localFileRecordExt;
 
   public LocalFileRecordReader(final byte[] body, final int offset) {
     super(body, offset);
-    localFile = new LocalFileRecord(body, offset);
+    localFileRecord = new LocalFileRecord(body, offset);
 
-    LocalFileRecordExt ext = new LocalFileRecordExt(body, offset + localFile.getLength());
+    LocalFileRecordExt ext = new LocalFileRecordExt(body, offset + localFileRecord.getLength());
     if (ext.startsWith(LocalFileRecordExt.HeaderSignature)) {
-      localFileExt = ext;
+      localFileRecordExt = ext;
     } else {
-      localFileExt = null;
+      localFileRecordExt = null;
     }
   }
 
   public boolean hasExtendedHeader() {
-    return localFileExt != null;
+    return localFileRecordExt != null;
   }
 
   public static LocalFileRecordReader fromCentralDirectoryRecord(CentralDirectoryRecord cdr) {
@@ -32,6 +32,11 @@ public class LocalFileRecordReader extends OffsetObject {
 
   @Override
   public String toString() {
-    return localFile.toString();
+    return localFileRecord.toString();
+  }
+
+  public int getLength() {
+    // TODO Auto-generated method stub
+    return 0;
   }
 }
