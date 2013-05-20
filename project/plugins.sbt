@@ -8,8 +8,6 @@ externalResolvers <<= resolvers map { r =>
   Resolver.withDefaultResolvers(r, mavenCentral = false)
 }
 
-libraryDependencies += "net.sf.jasmin" % "jasmin" % "2.4"
-
 // =======================================================================================
 
 // +-------------------------------------------------------------------------------------+

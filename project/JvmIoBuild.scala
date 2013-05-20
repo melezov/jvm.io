@@ -12,6 +12,12 @@ object BuildSettings {
   , initialCommands := "import io.jvm._"
   )
 
+  val bsJsad = javaSettings ++ Seq(
+    name    := "jvm-jsad"
+  , version := "0.0.1-SNAPSHOT"
+  , initialCommands := "import io.jvm.jsad._"
+  )
+
   val bsXml = javaSettings ++ Seq(
     name    := "jvm-xml"
   , version := "0.0.1-SNAPSHOT"
@@ -22,13 +28,7 @@ object BuildSettings {
 //  ---------------------------------------------------------------------------
 
 object Dependencies {
-  val ldUtil = libraryDependencies <++= (version, scalaVersion) ( (v, sV) => Seq(
-    "org.scala-lang" % "scala-library" % sV % (if (v endsWith "SNAPSHOT") "compile" else "test")
-  , "org.scalatest" %% "scalatest" % "2.0.M5b" % "test"
-  , "junit" % "junit" % "4.11" % "test"
-  ))
-
-  val ldXml = libraryDependencies <++= (version, scalaVersion) ( (v, sV) => Seq(
+  val commonLibs = libraryDependencies <++= (version, scalaVersion) ( (v, sV) => Seq(
     "org.scala-lang" % "scala-library" % sV % (if (v endsWith "SNAPSHOT") "compile" else "test")
   , "org.scalatest" %% "scalatest" % "2.0.M5b" % "test"
   , "junit" % "junit" % "4.11" % "test"
@@ -45,13 +45,19 @@ object JvmIoBuild extends Build {
   lazy val util = Project(
     "util"
   , file("util")
-  , settings = bsUtil :+ ldUtil
+  , settings = bsUtil :+ commonLibs
+  )
+
+  lazy val jsad = Project(
+    "jsad"
+  , file("jsad")
+  , settings = bsJsad :+ commonLibs
   )
 
   lazy val xml = Project(
     "xml"
   , file("xml")
-  , settings = bsXml :+ ldXml
+  , settings = bsXml :+ commonLibs
   )
 }
 
@@ -162,6 +168,8 @@ object Default {
 
     , unmanagedSourceDirectories in Compile <<= (scalaSource in Compile)(_ :: Nil)
     , unmanagedSourceDirectories in Test    <<= (scalaSource in Test   )(_ :: Nil)
+
+    , EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
     )
 
   lazy val javaSettings =
@@ -169,5 +177,6 @@ object Default {
       autoScalaLibrary := false
     , crossPaths := false
     , unmanagedSourceDirectories in Compile <<= (javaSource in Compile)(_ :: Nil)
+    , EclipseKeys.projectFlavor := EclipseProjectFlavor.Java
     )
 }
