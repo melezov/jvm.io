@@ -8,8 +8,6 @@ externalResolvers <<= resolvers map { r =>
   Resolver.withDefaultResolvers(r, mavenCentral = false)
 }
 
-libraryDependencies += "net.sf.jasmin" % "jasmin" % "2.4"
-
 // =======================================================================================
 
 // +-------------------------------------------------------------------------------------+
@@ -20,11 +18,11 @@ libraryDependencies += "net.sf.jasmin" % "jasmin" % "2.4"
 // | See also: Scala IDE downloads (http://download.scala-ide.org/)                      |
 // +-------------------------------------------------------------------------------------+
 
-addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.1.1")
+addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "2.2.0")
 
 // +-------------------------------------------------------------------------------------+
 // | Dependency graph SBT plugin (https://github.com/jrudolph/sbt-dependency-graph)      |
 // | Lists all library dependencies in a nicely formatted way for easy inspection.       |
 // +-------------------------------------------------------------------------------------+
 
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.0")
+addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.7.3")
