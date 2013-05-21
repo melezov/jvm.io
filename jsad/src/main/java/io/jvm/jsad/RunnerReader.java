@@ -4,6 +4,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
@@ -16,6 +18,8 @@ public class RunnerReader implements Callable<byte[]> {
 
     @Override
     public byte[] call() throws IOException {
+      System.out.println("Starting call");
+
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         final byte[] buffer = new byte[8192];
@@ -26,17 +30,17 @@ public class RunnerReader implements Callable<byte[]> {
             baos.write(buffer, 0, read);
         }
 
+        System.out.println("Ending call");
         return baos.toByteArray();
     }
 
-    public static byte[] read(final InputStream is) throws IOException {
+    private static ExecutorService executor =
+        Executors.newCachedThreadPool();
+
+    public static Future<byte[]> read(final InputStream is)  { //throws IOException
         final RunnerReader sr = new RunnerReader(is);
-        final Future<byte[]> output = new FutureTask<byte[]>(sr);
-        try {
-            return output.get();
-        }
-        catch(final Throwable t) {
-            throw new IOException("Could not read stream", t);
-        }
+        final Future<byte[]> result = executor.submit(sr);
+        System.out.println("Submitted job :" + is);
+        return result;
     }
 }

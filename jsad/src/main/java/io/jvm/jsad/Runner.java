@@ -1,6 +1,9 @@
 package io.jvm.jsad;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 
 class Runner {
     public final File workingDir;
@@ -30,45 +33,25 @@ class Runner {
 
         pb.directory(workingDir);
 
-        
 
 
-
-
-//        val pb = Process(cmd, workingDir)
-                //
-//                    val iS = new ByteArrayInputStream(input)
-//                    val oS = new ByteArrayOutputStream()
-//                    val eS = new ByteArrayOutputStream()
-                //
 //                    val pio = new ProcessIO(
 //                      in = transferFully(iS, _)
 //                    , out = transferFully(_, oS)
 //                    , err = transferFully(_, eS)
 //                    )
-                //
-//                    val process = pb run pio
-                //
-//                    val retCode =
-//                      waitPeriod match {
-//                        case Some(timeout) =>
-//                          val unmonitor = Runner.after(timeout)(process.destroy)
-//                          val rC = process.exitValue
-//                          unmonitor()
-//                          rC
-                //
-//                        case _ =>
-//                          process.exitValue()
-//                      }
-                //
-//                    FilePipeOutput(
-//                      retCode
-//                    , oS.toByteArray
-//                    , eS.toByteArray
-//                    )
-                //  }
-                //}
+        try {
+          final Process process = pb.start();
 
+          final ByteArrayOutputStream iS = (ByteArrayOutputStream) process.getOutputStream();
+          final ByteArrayInputStream oS = (ByteArrayInputStream) process.getInputStream();
+          final ByteArrayInputStream eS = (ByteArrayInputStream) process.getErrorStream();
+
+          final int retCode = process.exitValue();
+        } catch (IOException e) {
+          // TODO Auto-generated catch block
+          e.printStackTrace();
+        }
 
         return null;
     }
