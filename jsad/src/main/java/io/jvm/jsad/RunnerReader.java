@@ -4,21 +4,18 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.FutureTask;
 
-public class RunnerReader implements Callable<byte[]> {
+class RunnerReader implements Callable<byte[]> {
     private final InputStream is;
 
-    private RunnerReader(final InputStream is) {
+    public RunnerReader(final InputStream is) {
         this.is = is;
     }
 
     @Override
     public byte[] call() throws IOException {
-      System.out.println("Starting call");
+        try { Thread.sleep(1000); } catch(Exception e) {}
+        System.out.println("Starting call" + is);
 
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -27,20 +24,12 @@ public class RunnerReader implements Callable<byte[]> {
             final int read = is.read(buffer);
             if (read == -1) break;
 
+            System.out.println("READ " + read + " BYTES FORM " + is);
+
             baos.write(buffer, 0, read);
         }
 
-        System.out.println("Ending call");
+        System.out.println("Ending call" + is);
         return baos.toByteArray();
-    }
-
-    private static ExecutorService executor =
-        Executors.newCachedThreadPool();
-
-    public static Future<byte[]> read(final InputStream is)  { //throws IOException
-        final RunnerReader sr = new RunnerReader(is);
-        final Future<byte[]> result = executor.submit(sr);
-        System.out.println("Submitted job :" + is);
-        return result;
     }
 }
