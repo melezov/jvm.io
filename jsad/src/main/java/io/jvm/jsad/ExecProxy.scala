@@ -1,3 +1,4 @@
+/*
 package org.revenj.jsad
 
 import scalax.io._
@@ -48,3 +49,4 @@ object ExecProxy {
     FilePipeOutput(exitCode, out, err)
   }
 }
+*/
