@@ -177,6 +177,6 @@ object Default {
       autoScalaLibrary := false
     , crossPaths := false
     , unmanagedSourceDirectories in Compile <<= (javaSource in Compile)(_ :: Nil)
-    , EclipseKeys.projectFlavor := EclipseProjectFlavor.Java
+    //, EclipseKeys.projectFlavor := EclipseProjectFlavor.Java
     )
 }
