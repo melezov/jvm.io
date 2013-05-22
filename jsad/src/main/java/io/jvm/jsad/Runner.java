@@ -54,4 +54,8 @@ public class Runner {
             throw new IOException("Could not execute process", t);
         }
     }
+
+    public static void shutdown() {
+      executor.shutdown();
+    }
 }
