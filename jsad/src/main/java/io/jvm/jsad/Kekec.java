@@ -1,17 +1,12 @@
 package io.jvm.jsad;
 
-import io.jvm.jsad.wrapper.Defluff;
-
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 
 public class Kekec {
     public static final void main(final String[] args) throws IOException {
-
         final Runner r = new Runner();
-        final RunnerOutput ro = r.exec(new String[] {"ls"}, new byte[0]);
+        final Runner.Output ro = r.exec(new String[] { "cmd", "/c", "R:\\defluff", "<", "R:\\a.zip", ">", "R:\\b.zip", "2>", "R:\\c.zip"}, new byte[0], new File("R:/"));
 
         System.out.println(ro.code);
         System.out.println(new String(ro.error, "cp1250"));
@@ -19,6 +14,8 @@ public class Kekec {
 
         System.out.println("KEKE!");
 
+        r.finalize();
+/*
 
         RandomAccessFile f = new RandomAccessFile("/home/dinko/workspace-code/test.jar", "r");
         byte[] b = new byte[(int)f.length()];
@@ -29,6 +26,7 @@ public class Kekec {
         FileOutputStream fos = new FileOutputStream("/home/dinko/workspace-code/testDeFluffed.jar");
         fos.write(dfluff.process(b));
         fos.close();
+*/
     }
 
 }
