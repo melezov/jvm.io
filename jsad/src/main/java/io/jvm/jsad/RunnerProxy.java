@@ -7,93 +7,131 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-public class RunnerProxy {
-    private final Runner runner;
+public class RunnerProxy extends RunnerBase {
+    private final RunnerDirect runnerDirect;
+    private final boolean proxyInput;
+    private final boolean proxyOutput;
+    private final boolean proxyError;
 
-    public final File inputFile;
-    public final File outputFile;
-    public final File errorFile;
-
-    private RunnerProxy(
-            final Runner runner,
-            final File inputFile,
-            final File outputFile,
-            final File errorFile) {
-        this.runner = runner;
-        this.inputFile = inputFile;
-        this.outputFile = outputFile;
-        this.errorFile = errorFile;
+    RunnerProxy(
+            final RunnerDirect runnerDirect,
+            final boolean proxyInput,
+            final boolean proxyOutput,
+            final boolean proxyError) {
+        this.runnerDirect = runnerDirect;
+        this.proxyInput = proxyInput;
+        this.proxyOutput = proxyOutput;
+        this.proxyError = proxyError;
     }
 
-    public RunnerProxy(final Runner runner) {
-        this(runner, null, null, null);
+// -----------------------------------------------------------------------------
+
+    @Override
+    public boolean isProxyInput() {
+        return proxyInput;
     }
 
-    public RunnerProxy withProxyInput(final File inputFile) {
-        return new RunnerProxy(runner, inputFile, outputFile, errorFile);
+    @Override
+    public boolean isProxyOutput() {
+        return proxyOutput;
     }
 
-    public RunnerProxy withProxyInput(final byte[] input, final File workingDir) {
-        return new RunnerProxy(runner, inputFile, outputFile, errorFile);
+    @Override
+    public boolean isProxyError() {
+        return proxyError;
     }
 
-    public RunnerProxy withProxyOutput(final File outputFile) {
-        return new RunnerProxy(runner, inputFile, outputFile, errorFile);
+    @Override
+    public Runner setProxyInput(final boolean proxyInput) {
+        return new RunnerProxy(runnerDirect, proxyInput, proxyOutput, proxyError);
     }
 
-    public RunnerProxy withProxyError(final File errorFile) {
-        return new RunnerProxy(runner, inputFile, outputFile, errorFile);
+    @Override
+    public Runner setProxyOutput(final boolean proxyOutput) {
+        return new RunnerProxy(runnerDirect, proxyInput, proxyOutput, proxyError);
     }
 
-    public Runner.Output exec(
+    @Override
+    public Runner setProxyError(final boolean proxyError) {
+        return new RunnerProxy(runnerDirect, proxyInput, proxyOutput, proxyError);
+    }
+
+ // -----------------------------------------------------------------------------
+
+    @Override
+    public Output exec(
             final String[] params,
             final byte[] input,
             final File workingDir) throws IOException {
 
+        if (!(proxyInput || proxyOutput || proxyError)) {
+            return runnerDirect.exec(params, input, workingDir);
+        }
+
         final List<String> paramList = Arrays.asList(proxyPrefix);
         for(final String param: params) paramList.add(param);
 
-        if (inputFile != null) {
+        final RandomTag tag = new RandomTag();
+        final File inputFile, outputFile, errorFile;
+
+        if (proxyInput && input != null) {
+            inputFile = new File(workingDir, tag.toString());
+            write(inputFile, input);
             paramList.add("<");
             paramList.add(inputFile.getAbsolutePath());
         }
+        else {
+            inputFile = null;
+        }
 
-        if (outputFile != null) {
+        if (proxyOutput) {
+            outputFile = new File(workingDir, tag.toString());
             paramList.add(">");
             paramList.add(outputFile.getAbsolutePath());
         }
+        else {
+            outputFile = null;
+        }
 
-        if (errorFile != null) {
+        if (proxyError) {
+            errorFile = new File(workingDir, tag.toString());
             paramList.add("2>");
             paramList.add(errorFile.getAbsolutePath());
         }
+        else {
+            errorFile = null;
+        }
 
         final String[] newParams = paramList.toArray(new String[paramList.size()]);
-        final byte[] newInput = inputFile != null ? null : input;
+        final byte[] newInput = proxyInput ? null : input;
 
-        final Runner.Output output = runner.exec(newParams, newInput, workingDir);
+        if (inputFile != null) inputFile.delete();
+
+        final Output output = runnerDirect.exec(newParams, newInput, workingDir);
         if (outputFile == null && errorFile == null) {
             return output;
         }
 
-        return new Runner.Output(
-                output.code,
-                outputFile == null ? slurpFile(outputFile) : output.output,
-                errorFile == null ? slurpFile(errorFile) : output.error);
+        final Output newOutput = new Output(
+              output.code,
+              outputFile == null ? slurp(outputFile) : output.output,
+              errorFile == null ? slurp(errorFile) : output.error);
+
+        return newOutput;
     }
 
 // -----------------------------------------------------------------------------
 
     private static boolean isWindows =
-        "\\".equals(System.getProperty("file.separator"));
+            "\\".equals(System.getProperty("file.separator"));
 
     private static String[] proxyPrefix = isWindows
-        ? new String[] { "cmd", "/c" }
-        : new String[] { "/bin/sh" };
+            ? new String[] { "cmd", "/c" }
+            : new String[] { "/bin/sh" };
 
 // -----------------------------------------------------------------------------
 
-    private static void writeFile(final File file, final byte[] body) throws IOException {
+    private static void write(final File file, final byte[] body) throws IOException {
         final FileOutputStream fos = new FileOutputStream(file);
         try {
             fos.write(body);
@@ -103,7 +141,7 @@ public class RunnerProxy {
         }
     }
 
-    private static byte[] readFile(final File file) throws IOException {
+    private static byte[] slurp(final File file) throws IOException {
         final FileInputStream fis = new FileInputStream(file);
         try {
             final byte[] body = new byte[(int) file.length()];
@@ -112,16 +150,7 @@ public class RunnerProxy {
         }
         finally {
             fis.close();
+            file.delete();
         }
-    }
-
-    private static byte[] slurpFile(final File file) throws IOException {
-        final byte[] body = readFile(file);
-        file.delete();
-        return body;
-    }
-
-    private static void deleteFile(final File file) throws IOException {
-        file.delete();
     }
 }
