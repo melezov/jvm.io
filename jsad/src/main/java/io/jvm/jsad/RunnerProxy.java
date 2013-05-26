@@ -4,8 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+import java.util.ArrayDeque;
 
 public class RunnerProxy extends RunnerBase {
     private final RunnerDirect runnerDirect;
@@ -68,7 +67,8 @@ public class RunnerProxy extends RunnerBase {
             return runnerDirect.exec(params, input, workingDir);
         }
 
-        final List<String> paramList = Arrays.asList(proxyPrefix);
+        final ArrayDeque<String> paramList = new ArrayDeque<String>();
+        for(final String prefix: proxyPrefix) paramList.add(prefix);
         for(final String param: params) paramList.add(param);
 
         final RandomTag tag = new RandomTag();

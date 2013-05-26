@@ -13,7 +13,7 @@ public class RandomTag {
     }
 
     public RandomTag(final long major) {
-        this(String.format("%08X", major));
+        this(String.format("%016X", major));
     }
 
     public RandomTag() {
@@ -22,7 +22,7 @@ public class RandomTag {
 
     @Override
     public String toString() {
-        return String.format("%s-%08X", major, minor.incrementAndGet());
+        return String.format("%s-%016X", major, minor.incrementAndGet());
     }
 
 // -----------------------------------------------------------------------------
