@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayDeque;
+import java.util.Random;
 
 public class RunnerProxy extends RunnerBase {
     private final RunnerDirect runnerDirect;
@@ -67,69 +67,98 @@ public class RunnerProxy extends RunnerBase {
             return runnerDirect.exec(params, input, workingDir);
         }
 
-        final ArrayDeque<String> paramList = new ArrayDeque<String>();
-        for(final String prefix: proxyPrefix) paramList.add(prefix);
-        for(final String param: params) paramList.add(param);
+        final OsProxy osProxy = OsProxy.getOsProxy();
+        final StringBuilder proxyBody = new StringBuilder(osProxy.header);
 
-        final RandomTag tag = new RandomTag();
+        final String processTag =
+            String.format("%016X-%016X", System.currentTimeMillis(), random.nextLong());
+
         final File inputFile, outputFile, errorFile;
 
         if (proxyInput && input != null) {
-            inputFile = new File(workingDir, tag.toString());
+            inputFile = new File(workingDir, processTag + ".input");
             write(inputFile, input);
-            paramList.add("<");
-            paramList.add(inputFile.getAbsolutePath());
+            proxyBody.append(" < \"").append(inputFile.getAbsolutePath()).append('"');
         }
         else {
             inputFile = null;
         }
 
         if (proxyOutput) {
-            outputFile = new File(workingDir, tag.toString());
-            paramList.add(">");
-            paramList.add(outputFile.getAbsolutePath());
+            outputFile = new File(workingDir, processTag + ".output");
+            proxyBody.append(" > \"").append(outputFile.getAbsolutePath()).append('"');
         }
         else {
             outputFile = null;
         }
 
         if (proxyError) {
-            errorFile = new File(workingDir, tag.toString());
-            paramList.add("2>");
-            paramList.add(errorFile.getAbsolutePath());
+            errorFile = new File(workingDir, processTag + ".error");
+            proxyBody.append(" 2> \"").append(errorFile.getAbsolutePath()).append('"');
         }
         else {
             errorFile = null;
         }
 
-        final String[] newParams = paramList.toArray(new String[paramList.size()]);
+        final File proxyFile = new File(workingDir, processTag + osProxy.extension);
+        write(proxyFile, proxyBody.toString().getBytes(osProxy.encoding));
+
+        final String[] newParams = new String[osProxy.shell.length + params.length + 1];
+        newParams[0] = proxyFile.getAbsolutePath();
+        System.arraycopy(osProxy.shell, 0, newParams, 1, osProxy.shell.length);
+        System.arraycopy(params, 0, newParams, 1 + osProxy.shell.length, params.length);
+
         final byte[] newInput = proxyInput ? null : input;
 
+        final Output output = runnerDirect.exec(newParams, newInput, workingDir);
+        proxyFile.delete();
         if (inputFile != null) inputFile.delete();
 
-        final Output output = runnerDirect.exec(newParams, newInput, workingDir);
         if (outputFile == null && errorFile == null) {
             return output;
         }
 
         final Output newOutput = new Output(
               output.code,
-              outputFile == null ? slurp(outputFile) : output.output,
-              errorFile == null ? slurp(errorFile) : output.error);
+              outputFile != null ? slurp(outputFile) : output.output,
+              errorFile != null ? slurp(errorFile) : output.error);
 
         return newOutput;
     }
 
 // -----------------------------------------------------------------------------
 
-    private static boolean isWindows =
+    private static enum OsProxy {
+        WINDOWS(new String[] { "cmd", "/c" }, "@echo off\r\n%*", "cp1250", ".bat"),
+        LINUX  (new String[] { "/bin/sh" },   "#!/bin/sh\n$@",   "UTF-8",  ".sh" );
+
+        public final String[] shell;
+        public final String header;
+        public final String encoding;
+        public final String extension;
+
+        private OsProxy(
+                final String[] shell,
+                final String header,
+                final String encoding,
+                final String extension) {
+            this.shell = shell;
+            this.header = header;
+            this.encoding = encoding;
+            this.extension = extension;
+        }
+
+        private static boolean isWindows =
             "\\".equals(System.getProperty("file.separator"));
 
-    private static String[] proxyPrefix = isWindows
-            ? new String[] { "cmd", "/c" }
-            : new String[] { "/bin/sh" };
+        public static OsProxy getOsProxy() {
+            return isWindows ? WINDOWS : LINUX;
+        }
+    }
 
 // -----------------------------------------------------------------------------
+
+    private static Random random = new Random();
 
     private static void write(final File file, final byte[] body) throws IOException {
         final FileOutputStream fos = new FileOutputStream(file);
