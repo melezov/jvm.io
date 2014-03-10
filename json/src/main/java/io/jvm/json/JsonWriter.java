@@ -55,6 +55,10 @@ public class JsonWriter {
         writer.write("null");
     }
 
+    public void writeOpenObject(boolean needsComma) throws IOException {    		
+        writer.write('{');        
+    }
+    
     public void writeOpenObject() throws IOException {
         writer.write('{');
     }
@@ -129,6 +133,7 @@ public class JsonWriter {
     }
 
     public void writeString(final String value) throws IOException {
+    	
         writeCharArray(value.toCharArray());
     }
 

@@ -5,10 +5,8 @@ import io.jvm.json.deserializers.XmlJsonDeserializer;
 import io.jvm.json.serializers.XmlJsonSerializer;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -17,6 +15,7 @@ import java.net.URL;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -24,11 +23,14 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.custommonkey.xmlunit.DetailedDiff;
 import org.custommonkey.xmlunit.Diff;
+import org.custommonkey.xmlunit.XMLUnit;
 import org.json.JSONException;
 import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 public class Xml2JsonRoundTripTest {
@@ -39,18 +41,19 @@ public class Xml2JsonRoundTripTest {
 	 * io.jvm.json.serializers.XmlJsonSerializer, and asserts the generated XML
 	 * equivalence with the reference conversions (obtained by using Json.NET)
 	 */
+	// TODO: Separate tests for these cases
 	@Test
 	public void assertRoundTripEquivalenceWithReferenceConversion()
 			throws URISyntaxException, JSONException, SAXException,
-			IOException, ParserConfigurationException, TransformerConfigurationException, TransformerException, TransformerFactoryConfigurationError {
-
+			IOException, ParserConfigurationException, TransformerConfigurationException, TransformerException, TransformerFactoryConfigurationError {		
 		final File xmlSources_dir = getFileForResource("/roundtripTests/source/");				
 		
 		/* Iterate through the sources directory */
 		for (final File xmlSourceFile : xmlSources_dir.listFiles()) {						
 			
 			/* If perchance this is a directory, skip */
-			if (xmlSourceFile.isFile()) {				
+			if (xmlSourceFile.isFile()) {
+				
 				/*
 				 * In short, we deal with five files: 
 				 * 		- source/source.xml 
@@ -60,6 +63,7 @@ public class Xml2JsonRoundTripTest {
 				 * 		- reference/source.xml.json
 				 */
 
+				/* Filename initialisation */
 				final String sourceFilename_xml = xmlSourceFile.getName();
 				final String convertedFilename_json = sourceFilename_xml	+ ".json";
 				final String roundtripFilename_xml = sourceFilename_xml	+ ".json.xml";
@@ -70,70 +74,35 @@ public class Xml2JsonRoundTripTest {
 				final File referenceRoundtripFile_xml = getFileForResource("/roundtripTests/reference/"+ roundtripFilename_xml);								
 				assertTrue("The reference XML->JSON roundtrip file does not exist for: " + sourceFilename_xml, (referenceRoundtripFile_xml != null && referenceRoundtripFile_xml.exists()));
 				
+				/* Parse input files */
 				final Document source_xml = parseXmlFile(xmlSourceFile);
 				final String referenceJson = stringFromFile(referenceFile_json);
 				final Document referenceRoundTrip_xml = parseXmlFile(referenceRoundtripFile_xml);															
 				
-				final String convertedJson = jsonStringFromXml(source_xml);
-				
-				System.out.println("Converted JSon: ");
-				System.out.println(convertedJson);
-				
-//				saveToFile("roundtripTests/converted/"+convertedFilename_json, convertedJson);
-				
-				assertJsonEquivalence(convertedJson, referenceJson);				
+				/* Convert to json and compare with reference conversion */
+				final String convertedJson = jsonStringFromXml(source_xml);				
+				assertJsonEquivalence(convertedJson, referenceJson);								
 
-				//final Document roundtripXmlDocument = xmlDocumentfromJson(convertedJson);																			
-				// For when the implementation of the deserializer is complete
-				//assertXmlEquivalence("The reference roundtrip XML does not match the converted roundtrip XML",roundtripXmlDocument, referenceRoundTrip_xml);
-				//assertXmlEquivalence("The roundtrip XML does not match the source XML",roundtripXmlDocument,source_xml);
-				//assertXmlEquivalence("The reference roundtrip XML does not match the source XML",roundtripXmlDocument, source_xml);
+				/* Convert back to XML, and compare with reference documents */
+//				final Document roundtripXmlDocument = xmlDocumentfromJson(convertedJson);				
+//				
+//				assertXmlEquivalence("The reference roundtrip XML does not match the converted roundtrip XML",roundtripXmlDocument, referenceRoundTrip_xml);
+//				assertXmlEquivalence("The roundtrip XML does not match the source XML",roundtripXmlDocument,source_xml);
+//				assertXmlEquivalence("The reference roundtrip XML does not match the source XML",referenceRoundTrip_xml, source_xml);
 				
 				/* Save the newly generated files for future reference */
-				// TODO: 				
-//				saveXmlToFile("roundtripTests/converted/"+roundtripFilename_xml, roundtripXmlDocument);
+				// TODO:
 			}
-		}
-	}
-	
-	/**
-	 * Saves an XML file to a given resource path  
-	 */
-	private static void saveXmlToFile(String fileResourcePath, Document xmlDocument) throws URISyntaxException, IOException, TransformerConfigurationException, TransformerException, TransformerFactoryConfigurationError{		
-		StringWriter sw = new StringWriter();
+		}					
+	}		
 		
-		TransformerFactory
-			.newInstance()
-			.newTransformer()
-			.transform(new DOMSource(xmlDocument), new StreamResult(sw));
-		
-		String xmlDocument_string=sw.toString();
-		
-		saveToFile(fileResourcePath, xmlDocument_string);
-	}
-	
-	/**
-	 * Saves a text file to a given resource path 
-	 */
-	private static void saveToFile(String fileResourcePath, String text) throws URISyntaxException, IOException{
-		File targetFile = new File(Xml2JsonRoundTripTest.class.getResource(fileResourcePath).toURI());
-		
-		if (targetFile.exists() == false)
-			targetFile.createNewFile();
-				
-		BufferedWriter bw = new BufferedWriter(new FileWriter(targetFile.getAbsoluteFile()));
-		
-		bw.write(text);
-		bw.close();		
-	}
-	
 	private static Document xmlDocumentfromJson(String json) throws IOException
 	{
 		JsonReader jr = new JsonReader(new StringReader(json));
 		
 		return new XmlJsonDeserializer().fromJson(jr);
 	}
-	
+
 	private static String jsonStringFromXml(final Document source_xml) throws IOException{
 		
 		System.out.println("Konvertiramo: "+ source_xml.getDocumentURI());
@@ -164,14 +133,35 @@ public class Xml2JsonRoundTripTest {
 	}				
 	
 	private static void assertJsonEquivalence(String lhs, String rhs) throws JSONException
-	{			
+	{
+		System.out.println("Checking for json equivalence of the following:");
+		System.out.println(lhs);
+		System.out.println(rhs);
+		
 		JSONAssert.assertEquals(lhs, rhs, false);
 	}
 	
 	private static void assertXmlEquivalence(String message, Document lhs, Document rhs)
-	{
+	{		
+		XMLUnit.setIgnoreAttributeOrder(true);
+		XMLUnit.setIgnoreWhitespace(true);
+		XMLUnit.setNormalize(true);		
+		
+		/*System.out.println("Roundtrip");
+		System.out.println(xmlDocumentToString(lhs));
+		System.out.println("Source");
+		System.out.println(xmlDocumentToString(rhs));*/
+		
 		final Diff diff = new Diff(lhs, rhs);
-		assertTrue(message, diff.similar());
+		final DetailedDiff dd = new DetailedDiff(diff);
+		
+		StringBuffer msg = new StringBuffer();
+		diff.appendMessage(msg);
+		
+		System.out.println(msg);
+		
+		assertTrue(message, dd.similar());
+		//assertTrue(message, diff.similar());
 	}
 	
 	private static File getFileForResource(String resourcePath) throws URISyntaxException
@@ -192,8 +182,47 @@ public class Xml2JsonRoundTripTest {
 					.newInstance()
 					.newDocumentBuilder()
 					.parse(file);
-		doc.getDocumentElement().normalize();
+		trimWhitespaceTextNodes(doc);
 		
 		return doc;
-	}		
+	}
+	
+	private static void trimWhitespaceTextNodes(final org.w3c.dom.Node node) {
+		if (node != null && node.getChildNodes() != null)
+			for (int i = 0; i < node.getChildNodes().getLength(); i++) {
+				final org.w3c.dom.Node child = node.getChildNodes().item(i);
+				if (child.getNodeType() == org.w3c.dom.Node.TEXT_NODE
+						&& child.getNodeValue().trim().length() == 0)
+					node.removeChild(child);
+				trimWhitespaceTextNodes(node.getChildNodes().item(i));
+			}
+	}
+	
+	
+	/* =================================== Irrelevant helpers ======================================================*/
+
+	private static void printDocumentTree(Node el){
+		System.out.println(el.toString());
+		for(int i=0;i<el.getChildNodes().getLength();i++)
+			printDocumentTree(el.getChildNodes().item(i));		
+	} 
+	
+	public static String xmlDocumentToString(Document doc)
+	{
+	    try
+	    {
+	       DOMSource domSource = new DOMSource(doc);
+	       StringWriter writer = new StringWriter();
+	       StreamResult result = new StreamResult(writer);
+	       TransformerFactory tf = TransformerFactory.newInstance();
+	       Transformer transformer = tf.newTransformer();
+	       transformer.transform(domSource, result);
+	       return writer.toString();
+	    }
+	    catch(TransformerException ex)
+	    {
+	       ex.printStackTrace();
+	       return null;
+	    }
+	} 
 }

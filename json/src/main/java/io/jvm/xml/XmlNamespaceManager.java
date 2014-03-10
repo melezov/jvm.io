@@ -1,9 +1,10 @@
 package io.jvm.xml;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Stack;
 
 /**
  * An ad-hoc implementation of an XmlNamespaceManager.
@@ -21,7 +22,7 @@ public class XmlNamespaceManager {
 	/**
 	 * A stack of namespace prefix:uri mappings
 	 */
-	private Stack<Map<String,String>> xmlNamespaceScopes;
+	private Deque<Map<String,String>> xmlNamespaceScopes;
 	
 	/* Properties */
 		
@@ -41,7 +42,7 @@ public class XmlNamespaceManager {
 	/* Methods */	
 
 	public XmlNamespaceManager(){
-		xmlNamespaceScopes = new Stack<Map<String,String>>();	
+		xmlNamespaceScopes = new ArrayDeque<Map<String,String>>();	
 	}
 	
 	public void pushScope(){
