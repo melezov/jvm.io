@@ -57,6 +57,8 @@ public class XmlJsonSerializer implements JsonSerializer<Element> {
 	private final boolean writeArrayAttribute = false;
 	private final boolean omitRootObject = false;
 
+	private boolean needsComma = false;
+	
 	/**
 	 * Write a Json representation of a given org.w3c.dom.Element.
 	 * 
@@ -69,20 +71,33 @@ public class XmlJsonSerializer implements JsonSerializer<Element> {
 	private void writeJson(final JsonWriter writer, final Element element)
 			throws IOException {
 		
+		trimWhitespaceTextNodes(element.getOwnerDocument());
+		
 		final XmlNamespaceManager manager = new XmlNamespaceManager();
 		pushParentNamespaces(element, manager);
 
 		if (!omitRootObject)
-			writer.writeOpenObject();
+			writeOpenObjectWithComma(writer);
 		
 		//writeXmlDeclaration(writer,element.getOwnerDocument(),manager);
 		
 		serializeNode(writer, element, manager, !omitRootObject);
 
 		if (!omitRootObject)
-			writer.writeCloseObject();
+			writeCloseObjectWithComma(writer);
 	}
 
+	private static void trimWhitespaceTextNodes(final org.w3c.dom.Node node) {
+		if (node != null && node.getChildNodes() != null)
+			for (int i = 0; i < node.getChildNodes().getLength(); i++) {
+				final org.w3c.dom.Node child = node.getChildNodes().item(i);
+				if (child.getNodeType() == org.w3c.dom.Node.TEXT_NODE
+						&& child.getNodeValue().trim().length() == 0)
+					node.removeChild(child);
+				trimWhitespaceTextNodes(node.getChildNodes().item(i));
+			}
+	}	
+	
 	private void pushParentNamespaces(final Element element,
 			final XmlNamespaceManager manager) {
 		final List<Element> parentElements = new ArrayList<Element>();
@@ -248,18 +263,17 @@ public class XmlJsonSerializer implements JsonSerializer<Element> {
 	private void serializeArray(final JsonWriter writer, final String nameOfTheElements, final List<Node> nodes, final XmlNamespaceManager manager, boolean writePropertyName) throws IOException{
 
         if (writePropertyName){
-            writer.writeString(nameOfTheElements);
-            writer.writeColon();            
+            writePropertyNameAndColon(writer, nameOfTheElements);                       
         }
         
-        writer.writeOpenArray();
+        writeOpenArrayWithComma(writer);
 
         for (int i = 0; i < nodes.size(); i++)
         {
             serializeNode(writer, nodes.get(i), manager, false);
         }
 
-        writer.writeCloseArray();
+        writeCloseArrayWithComma(writer);
 	} 
 		
 	/**
@@ -282,27 +296,23 @@ public class XmlJsonSerializer implements JsonSerializer<Element> {
 	///XXX: incomplete, does not add a comma after closing tag 
 	private void writeXmlDeclaration(final JsonWriter writer, final Document document, final XmlNamespaceManager manager) throws IOException{
 		/* Deserializirat deklaraciju, iako ovo zvuči krivo staviti ovdje */
-		writer.writeString(declarationNodeTag);
-		writer.writeColon();
-		writer.writeOpenObject();
+		writePropertyNameAndColon(writer,declarationNodeTag);		
+		writeOpenObjectWithComma(writer);
 		if(document.getXmlVersion()!=null){
-			writer.writeString("@version");
-			writer.writeColon();
-			writer.writeString(document.getXmlVersion());
+			writePropertyNameAndColon(writer,"@version");			
+			writePropertyValue(writer,document.getXmlVersion());
 		}
 		writer.writeComma();
 		if(document.getXmlVersion()!=null){
-			writer.writeString("@encoding");
-			writer.writeColon();
-			writer.writeString(document.getXmlEncoding());
+			writePropertyNameAndColon(writer,"@encoding");			
+			writePropertyValue(writer,document.getXmlEncoding());
 		}
 		writer.writeComma();
 		if(document.getXmlVersion()!=null){
-			writer.writeString("@standalone");
-			writer.writeColon();
-			writer.writeString(document.getXmlStandalone()?"yes":"no");
+			writePropertyNameAndColon(writer,"@standalone");			
+			writePropertyValue(writer,document.getXmlStandalone()?"yes":"no");
 		}					
-		writer.writeCloseObject();
+		writeCloseObjectWithComma(writer);
 	}
 	
 	private void serializeNode(final JsonWriter writer, final Node node, final XmlNamespaceManager manager, final boolean writePropertyName) throws IOException{
@@ -335,17 +345,16 @@ public class XmlJsonSerializer implements JsonSerializer<Element> {
 					}
 					
 					if(writePropertyName){						
-						writer.writeString(getPropertyName(node, manager));
-						writer.writeColon();
+						writePropertyNameAndColon(writer, getPropertyName(node, manager));						
 					}
 											
 					if(hasSingleTextChild(node))											
-						writer.writeString(node.getChildNodes().item(0).getNodeValue());												
+						writePropertyValue(writer,node.getChildNodes().item(0).getNodeValue());												
 					else if(nodeIsEmpty(node)){
 						writer.writeNull();
 					}
 					else{						
-						writer.writeOpenObject();
+						writeOpenObjectWithComma(writer);
 						
 						/* First serialize the attributes */
 						
@@ -355,7 +364,7 @@ public class XmlJsonSerializer implements JsonSerializer<Element> {
 						/* Then serialize the nodes by groups */
 						serializeGroupedNodes(writer, node, manager, true);
 						
-						writer.writeCloseObject();
+						writeCloseObjectWithComma(writer);
 					}
 					
 					manager.popScope();
@@ -376,10 +385,9 @@ public class XmlJsonSerializer implements JsonSerializer<Element> {
 				}
 				
 				if(writePropertyName){
-					writer.writeString(getPropertyName(node, manager));
-					writer.writeColon();
+					writePropertyNameAndColon(writer,getPropertyName(node, manager));					
 				}
-				writer.writeString(node.getNodeValue());
+				writePropertyValue(writer,node.getNodeValue());
 				
 				break;			
 			// Not covered by org.w2c.dom specs:
@@ -450,5 +458,47 @@ public class XmlJsonSerializer implements JsonSerializer<Element> {
 			return false;
 		else
 			return lhs.equals(rhs);
+	}		
+
+	private void writeCommaIfNeedsComma(JsonWriter writer) throws IOException{
+		if(needsComma){
+			writer.writeComma();
+			needsComma=false;
+		}
+	}
+	
+	private void writePropertyNameAndColon(JsonWriter writer, String propertyName) throws IOException{
+		writeStringWithComma(writer, propertyName);
+		writer.writeColon();
+	}
+	
+	private void writePropertyValue(JsonWriter writer, String propertyValue) throws IOException{		
+		writer.writeString(propertyValue);
+		needsComma=true;
+	}
+	
+	private void writeStringWithComma(JsonWriter writer, String text) throws IOException{		
+		writeCommaIfNeedsComma(writer);
+		writer.writeString(text);		
+	} 
+	
+	private void writeOpenObjectWithComma(JsonWriter writer) throws IOException{		
+		writeCommaIfNeedsComma(writer);
+		writer.writeOpenObject();		
+	}
+	
+	private void writeOpenArrayWithComma(JsonWriter writer) throws IOException{		
+		writeCommaIfNeedsComma(writer);
+		writer.writeOpenArray();		
+	}
+	
+	private void writeCloseObjectWithComma(JsonWriter writer) throws IOException{
+		needsComma=true;
+		writer.writeCloseObject();							
+	}
+	
+	private void writeCloseArrayWithComma(JsonWriter writer) throws IOException{
+		needsComma=true;
+		writer.writeCloseArray();		
 	}
 }
