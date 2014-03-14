@@ -1,8 +1,7 @@
 package io.jvm.json;
 
-import static io.jvm.json.Helpers.getFileForResource;
-import static io.jvm.json.Helpers.parseXmlFile;
-import static io.jvm.json.Helpers.stringFromFile;
+import static io.jvm.json.Helpers.*;
+
 import static org.junit.Assert.assertTrue;
 import io.jvm.json.deserializers.XmlJsonDeserializer;
 import io.jvm.json.serializers.XmlJsonSerializer;
@@ -93,32 +92,9 @@ public class Xml2JsonRoundTripTest {
 	}
 	
 	private static void assertXmlEquivalence(String message, Document lhs, Document rhs){
-		XmlBruteForceComparator comparator = new XmlBruteForceComparator();
+		XmlBruteForceComparator comparator = new XmlBruteForceComparator();				
 		
 		assertTrue(message, comparator.compare(lhs.getDocumentElement(), rhs.getDocumentElement())==0);
 	}
-	
-//	private static void assertXmlEquivalence(String message, Document lhs, Document rhs)
-//	{		
-//		XMLUnit.setIgnoreAttributeOrder(true);
-//		XMLUnit.setIgnoreWhitespace(true);
-////		XMLUnit.setNormalize(true);		
-//		
-//		System.out.println("Roundtrip:");
-//		System.out.println(xmlDocumentToString(lhs));
-//		System.out.println("Source:");
-//		System.out.println(xmlDocumentToString(rhs));
-//		
-//		final Diff diff = new Diff(lhs, rhs);
-//		final DetailedDiff dd = new DetailedDiff(diff);
-//		
-//		StringBuffer msg = new StringBuffer();
-//		diff.appendMessage(msg);
-//		
-////		System.out.println(msg);
-//		
-//		//assertTrue(message, dd.similar());
-//		assertTrue(message, diff.similar());
-//	}
 	
 }

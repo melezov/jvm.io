@@ -91,10 +91,6 @@ public class Json2XmlRoundTripTest {
 
     private static void assertXmlEquivalence(String message, Document lhs, Document rhs) {
 	XmlBruteForceComparator comparator = new XmlBruteForceComparator();
-
-//	printXmlDocument(lhs);
-//	printXmlDocument(rhs);
-
 	assertTrue(message, comparator.compare(lhs.getDocumentElement(), rhs.getDocumentElement()) == 0);
     }
 
