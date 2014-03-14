@@ -70,6 +70,10 @@ public class Helpers {
 			printDocumentTree(el.getChildNodes().item(i));		
 	} 
 	
+	public static void printXmlDocument(Document doc){
+	    System.out.println(xmlDocumentToString(doc));
+	}
+	
 	public static String xmlDocumentToString(Document doc)
 	{
 	    try

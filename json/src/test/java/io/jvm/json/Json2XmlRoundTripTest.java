@@ -1,6 +1,7 @@
 package io.jvm.json;
 
 import static org.junit.Assert.*;
+
 import io.jvm.json.deserializers.XmlJsonDeserializer;
 import io.jvm.json.serializers.XmlJsonSerializer;
 import io.jvm.xml.XmlBruteForceComparator;
@@ -27,29 +28,30 @@ import static io.jvm.json.Helpers.*;
 public class Json2XmlRoundTripTest {
 
     @Test
-    public void assertRoundTripEquivalenceWithReferenceConversion()
-	    throws URISyntaxException, JSONException, SAXException,
-	    IOException, ParserConfigurationException,
-	    TransformerConfigurationException, TransformerException,
-	    TransformerFactoryConfigurationError {
+    public void assertRoundTripEquivalenceWithReferenceConversion() throws URISyntaxException, JSONException,
+	    SAXException, IOException, ParserConfigurationException, TransformerConfigurationException,
+	    TransformerException, TransformerFactoryConfigurationError {
 
 	final File jsonSources_dir = getFileForResource("/roundtripTests/json/source/");
 
-	for (final File jsonSourceFile : jsonSources_dir.listFiles()) {	    
+	for (final File jsonSourceFile : jsonSources_dir.listFiles()) {
 	    if (jsonSourceFile.isFile()) {
 		System.out.println("Testiramo za datoteku: " + jsonSourceFile.getName());
-		
+
 		/* Filename initialisation */
 		final String sourceFilename_json = jsonSourceFile.getName();
 		final String convertedFilename_xml = sourceFilename_json + ".xml";
-		final String roundtripFilename_json = sourceFilename_json
-			+ ".xml.json";
+		final String roundtripFilename_json = sourceFilename_json + ".xml.json";
 
-		final File referenceFile_xml = getFileForResource("/roundtripTests/json/reference/"	+ convertedFilename_xml);
-		assertTrue("The reference JSON file does not exist for: "+ sourceFilename_json,	(referenceFile_xml != null && referenceFile_xml.exists()));
+		final File referenceFile_xml = getFileForResource("/roundtripTests/json/reference/"
+			+ convertedFilename_xml);
+		assertTrue("The reference JSON file does not exist for: " + sourceFilename_json,
+			(referenceFile_xml != null && referenceFile_xml.exists()));
 
-		final File referenceRoundtripFile_json = getFileForResource("/roundtripTests/json/reference/" + roundtripFilename_json);
-		assertTrue("The reference XML->JSON roundtrip file does not exist for: "+ sourceFilename_json,(referenceRoundtripFile_json != null && referenceRoundtripFile_json.exists()));
+		final File referenceRoundtripFile_json = getFileForResource("/roundtripTests/json/reference/"
+			+ roundtripFilename_json);
+		assertTrue("The reference XML->JSON roundtrip file does not exist for: " + sourceFilename_json,
+			(referenceRoundtripFile_json != null && referenceRoundtripFile_json.exists()));
 
 		/* Parse input files */
 		final String source_json = stringFromFile(jsonSourceFile);
@@ -57,8 +59,8 @@ public class Json2XmlRoundTripTest {
 		final String referenceRoundTrip_json = stringFromFile(referenceRoundtripFile_json);
 
 		/* Convert to XML and compare with reference conversion */
-		final Document convertedXml = xmlDocumentFromJson(source_json);		
-		assertXmlEquivalence("The converted XML does not match the reference XML",convertedXml, referenceXml);
+		final Document convertedXml = xmlDocumentFromJson(source_json);
+		assertXmlEquivalence("The converted XML does not match the reference XML", convertedXml, referenceXml);
 
 		/* Convert back to Json, and compare with reference documents */
 		final String roundtripJsonString = jsonStringFromXml(convertedXml);
@@ -76,28 +78,24 @@ public class Json2XmlRoundTripTest {
 	return new XmlJsonDeserializer().fromJson(jr);
     }
 
-    private static String jsonStringFromXml(final Document source_xml)
-	    throws IOException {
+    private static String jsonStringFromXml(final Document source_xml) throws IOException {
 
 	final StringWriter sw = new StringWriter();
-	new XmlJsonSerializer().toJson(new JsonWriter(sw),
-		source_xml.getDocumentElement());
+	new XmlJsonSerializer().toJson(new JsonWriter(sw), source_xml.getDocumentElement());
 	return sw.toString();
     }
 
-    private static void assertJsonEquivalence(String lhs, String rhs)
-	    throws JSONException {
+    private static void assertJsonEquivalence(String lhs, String rhs) throws JSONException {
 	JSONAssert.assertEquals(lhs, rhs, false);
     }
 
-    private static void assertXmlEquivalence(String message, Document lhs,
-	    Document rhs) {
+    private static void assertXmlEquivalence(String message, Document lhs, Document rhs) {
 	XmlBruteForceComparator comparator = new XmlBruteForceComparator();
 
-	assertTrue(
-		message,
-		comparator.compare(lhs.getDocumentElement(),
-			rhs.getDocumentElement()) == 0);
+//	printXmlDocument(lhs);
+//	printXmlDocument(rhs);
+
+	assertTrue(message, comparator.compare(lhs.getDocumentElement(), rhs.getDocumentElement()) == 0);
     }
 
 }
