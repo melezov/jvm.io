@@ -16,11 +16,16 @@ public class JsonReader {
     private char _last;
     private boolean _lastValid;
 
+    /**
+     * The next character read from the stream
+     * @return The character read
+     * @throws IOException The end of the stream was reached, or an I/O error has occured
+     */
     public char next() throws IOException {
         if (_endOfStream) throw new IOException("Could not read past the end of stream");
 
         final int next = reader.read();
-        System.out.println("READ: " + (char) next + " (" + next + ")");
+        //System.out.println("READ: " + (char) next + " (" + next + ")");
         if (next == -1) {
             _lastValid = false;
             _endOfStream = true;
@@ -31,11 +36,16 @@ public class JsonReader {
         return _last = (char) next;
     }
 
+    /**
+     * Consumes the next character from the streem and returns it's {@code int} value;
+     * @return The {@code int} value of the next character from the stream
+     * @throws IOException The end of the stream was reached, or an I/O error has occured
+     */
     public int peek() throws IOException {
         if (_endOfStream) throw new IOException("Could not peek past the end of stream");
 
-        final int peek = reader.read();
-        System.out.println("PEEK: " + (char) peek + " (" + peek + ")");
+        final int peek = reader.read();        
+        //System.out.println("PEEK: " + (char) peek + " (" + peek + ")");
 
         if (peek == -1) {
             _lastValid = false;
@@ -48,6 +58,11 @@ public class JsonReader {
         return peek;
     }
 
+    /**
+     * The value of the last character consumed from the stream. 
+     * @return The last character consumed from the stream.
+     * @throws IOException If the last character consumed is invalid, or the end of the stream is reached
+     */
     public char last() throws IOException {
         if (!_lastValid) {
             if (_endOfStream)
@@ -57,36 +72,82 @@ public class JsonReader {
         return _last;
     }
 
+    /**
+     * Reads a character from the stream.
+     * @return The value of the last character read, if valid, otherwise the value of the next valid character.
+     * @throws IOException The end of the stream was reached, or an I/O error has occured
+     */
     public char read() throws IOException {
         return _lastValid ? _last : next();
     }
 
-    public void invalidate() throws IOException {
+    /**
+     * Invalidates the last character read from the stream.
+     */
+    public void invalidate() {    	
         _lastValid = false;
     }
 
+    /**
+     * Consumes whitespace characters in the stream (if any) and discards them
+     * @throws IOException The end of the stream was reached, or an I/O error has occured
+     */
+    public void consumeWhitespaces() throws IOException{
+    	while(Character.isWhitespace(read()));
+    }
+    
+    /**
+     * Asserts that the method {@link JsonReader#next()} returns <code>expected</code>
+     * @param expected The expected value of the character
+     * @throws IOException The next character read has a value different than <code>expected</code>
+     * @throws IOException The end of the stream was reached, or an I/O error has occured
+     */
     public void assertNext(final char expected) throws IOException {
         if (next() != expected) throw new IOException("Could not parse token, expected '" + expected + "', got '" + last() + "'");
         invalidate();
     }
 
+    /**
+     * Assert that the method {@link JsonReader#last()} returns <code>expected</code>
+     * @param expected The expected value of the character
+     * @throws IOException The last character read from the stream has a value different than <code>expected</code>
+     * @throws IOException The last character read is invalid, or the end of the stream has been reached
+     */
     public void assertLast(final char expected) throws IOException {
         if (last() != expected) throw new IOException("Could not parse token, expected '" + expected + "', got '" + last() + "'");
         invalidate();
     }
 
+    /**
+     * Assert that the method {@link JsonReader#read()} returns <code>expected</code>
+     * @param expected The expected value of the character
+     * @throws IOException The character has a value different than <code>expected</code>
+     * @throws IOException The last character read is invalid, or the end of the stream has been reached
+     */
     public void assertRead(final char expected) throws IOException {
         if (_lastValid) assertLast(expected); else assertNext(expected);
     }
 
+    /**
+     * Returns {@code int} value of the next hex digit read, or fails if the next character is not a hex digit.
+     * @return The {@code int} value of the next hex digit read
+     * @throws IOException The next character is not a hex digit
+     * @throws IOException The end of the stream was reached, or an I/O error has occured
+     */
     public int nextHexDigit() throws IOException {
         final char next = next();
         if (next >= '0' && next <= '9') return next - 0x30;
         if (next >= 'A' && next <= 'F') return next - 0x37;
         if (next >= 'a' && next <= 'f') return next - 0x57;
         throw new IOException("Could not parse unicode escape, expected a hexadecimal digit, got '" + next + "'");
-    }
-
+    }      
+    
+    /**
+     * Reads a {@code null} value from the stream
+     * @return {@code (T) null}
+     * @throws IOException The token read from the stream was not 'null'
+     * @throws IOException The end of the stream was reached, or an I/O error has occured
+     */
     public <T> T readNull() throws IOException {
         if (read() == 'n' && next() == 'u' && next() == 'l' && next() == 'l') {
             invalidate();
@@ -96,6 +157,12 @@ public class JsonReader {
         throw new IOException("Could not parse token, expected 'null'");
     }
 
+    /**
+     * Reads a {@code true} value from the stream
+     * @return The {@code boolean} literal {@code true}
+     * @throws IOException The token read from the stream was not 'true'
+     * @throws IOException The end of the stream was reached, or an I/O error has occured
+     */
     public boolean readTrue() throws IOException {
         if (read() == 't' && next() == 'r' && next() == 'u' && next() == 'e') {
             invalidate();
@@ -105,6 +172,12 @@ public class JsonReader {
         throw new IOException("Could not parse token, expected 'true'");
     }
 
+    /**
+     * Reads a {@code false} value from the stream
+     * @return The {@code boolean} literal {@code false}
+     * @throws IOException The token read from the stream was not 'false'
+     * @throws IOException The end of the stream was reached, or an I/O error has occured
+     */
     public boolean readFalse() throws IOException {
         if (read() == 'f' && next() == 'a' && next() == 'l' && next() == 's' && next() == 'e') {
             invalidate();
@@ -114,6 +187,13 @@ public class JsonReader {
         throw new IOException("Could not parse token, expected 'false'");
     }
 
+    /**
+     * Reads a raw number from the stream, and returns it as a {@link java.lang.StringBuilder}
+     * @param sb The {@link StringBuilder} to read the number into
+     * @return the populated {@link StringBuilder}
+     * @throws IOException The number was not in a correct format
+     * @throws IOException The end of the stream was reached, or an I/O error has occured
+     */
     public StringBuilder readRawNumber(final StringBuilder sb) throws IOException {
         char ch = read();
         if (ch == '-') {
@@ -182,8 +262,8 @@ public class JsonReader {
             throw new IOException("Could not parse number - no leading digits found!");
 
         return sb;
-    }
-
+    }    
+        
     @SuppressWarnings("unchecked")
     public <T> T readOpt(final JsonDeserializer<T> deserializer) throws IOException {
         return read() == 'n' ? (T) readNull() : deserializer.fromJson(this);
@@ -206,15 +286,16 @@ public class JsonReader {
     public <T> T[] readOptArrayOpt(final JsonDeserializer<T> deserializer) throws IOException {
         return read() == 'n' ? (T[]) readNull() : readArrayOpt(deserializer);
     }
-
-
+  
     public <T> ArrayList<T> readList(final JsonDeserializer<T> deserializer) throws IOException {
         assertRead('[');
-
+        consumeWhitespaces();
+        
         final ArrayList<T> values = new ArrayList<T>();
         final StringBuilder sb = new StringBuilder();
         boolean needComma = false;
         while (read() != ']') {
+        	consumeWhitespaces();
             if (needComma) {
                 assertLast(',');
                 sb.setLength(0);
@@ -264,7 +345,6 @@ public class JsonReader {
     public <T> ArrayList<T> readOptListOpt(final JsonDeserializer<T> deserializer) throws IOException {
         return read() == 'n' ? (ArrayList<T>) readNull() : readListOpt(deserializer);
     }
-
 
     public <T> HashSet<T> readSet(final JsonDeserializer<T> deserializer) throws IOException {
         assertRead('[');
@@ -355,7 +435,7 @@ public class JsonReader {
 
         invalidate();
         return sb.toString();
-    }
+    }    
 }
 
 //    private Map<String, Object> readObject(final StringBuilder sb) throws IOException {
