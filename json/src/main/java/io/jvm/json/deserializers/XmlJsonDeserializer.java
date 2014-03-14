@@ -51,7 +51,7 @@ public class XmlJsonDeserializer implements JsonDeserializer<Document>{
 					.newDocument();
 			
 			/* The document must have a single Json node */
-			reader.assertRead('{');
+			reader.assertReadToken('{');
 			
 			/* The first element is the root node */
 			String rootElementName = reader.readString();
@@ -59,12 +59,13 @@ public class XmlJsonDeserializer implements JsonDeserializer<Document>{
 			Element root = document.createElement(rootElementName);			
 			document.appendChild(root);
 			
-			reader.assertRead(':');
+			reader.assertReadToken(':');
 			
 			buildNodeValueSubtree(document, root, reader);
 			
-			reader.assertRead('}');
-			/* TODO: if this is not a single json object node, throw */			
+			reader.assertReadToken('}');
+			reader.consumeWhitespaces();
+			reader.assertEndOfStream();
 		}
 		catch(ParserConfigurationException ex){
 			document = null; // TODO: Handle the exception, this is just until we implement the deserializer
@@ -73,16 +74,16 @@ public class XmlJsonDeserializer implements JsonDeserializer<Document>{
 		return document;
 	}		
 	
-	private boolean valueIsObject(JsonReader reader) throws IOException{
-		return reader.read() == '{';		 
+	private boolean valueIsObject(JsonReader reader) throws IOException{	    	
+		return reader.readToken() == '{';		 
 	}
 	
-	private boolean valueIsArray(JsonReader reader)  throws IOException{
-		return reader.read() == '['; 
+	private boolean valueIsArray(JsonReader reader)  throws IOException{	    	
+		return reader.readToken() == '['; 
 	}
 	
 	private void buildTextValue(Document document, Element node, JsonReader reader) throws IOException{		
-		switch(reader.read()){
+		switch(reader.readToken()){
 		case '"':
 			/* String */
 			node.appendChild(document.createTextNode(reader.readString()));
@@ -121,7 +122,7 @@ public class XmlJsonDeserializer implements JsonDeserializer<Document>{
 			grandParent.removeChild(parent);
 			buildArrayValueSubtree(document, grandParent, arrayNodesName, reader);
 		}		
-		else{ // TODO: for special document names
+		else{
 			/* Otherwise the value is string/true/false/null/number or invalid*/
 			// Note: JSON converted from XML should never have non-string true/false/null
 			buildTextValue(document, parent,reader);
@@ -135,17 +136,17 @@ public class XmlJsonDeserializer implements JsonDeserializer<Document>{
 	 * @param reader the {@link JsonReader} we are currently using to read the Json stream 
 	 */
 	private void buildObjectValueSubtree(Document document, Element parent, JsonReader reader) throws IOException{
-		reader.assertRead('{');
+		reader.assertReadToken('{');
 		
 		boolean needsComma=false;
-		while (reader.read() != '}') {
+		while (reader.readToken() != '}') {
 			if(needsComma){
-				reader.assertLast(',');
+				reader.assertLastToken(',');
 				reader.next();
 			}
 			
 			String childNodeName = reader.readString();			
-			reader.assertRead(':');
+			reader.assertReadToken(':');
 			
 			/* If it's an attribute node */
 			if(childNodeName.startsWith("@")){
@@ -176,7 +177,7 @@ public class XmlJsonDeserializer implements JsonDeserializer<Document>{
 			
 			needsComma=true;
 		}
-		reader.assertRead('}');
+		reader.assertReadToken('}');
 	}
 	
 	/**
@@ -191,12 +192,12 @@ public class XmlJsonDeserializer implements JsonDeserializer<Document>{
 	 * @throws IOException
 	 */
 	private void buildArrayValueSubtree(Document document, Element parent, String arrayNodesName, JsonReader reader) throws IOException{
-		reader.assertRead('[');
+		reader.assertReadToken('[');
 		
 		boolean needsComma = false;
-		while(reader.read()!=']'){
+		while(reader.readToken()!=']'){
 			if(needsComma){
-				reader.assertLast(',');
+				reader.assertLastToken(',');
 				reader.next();
 			}
 			
@@ -207,6 +208,6 @@ public class XmlJsonDeserializer implements JsonDeserializer<Document>{
 			needsComma=true;
 		}
 		
-		reader.assertRead(']');
+		reader.assertReadToken(']');
 	}
 }
