@@ -1,7 +1,6 @@
 package io.jvm.json;
 
 import static io.jvm.json.Helpers.*;
-
 import static org.junit.Assert.assertTrue;
 import io.jvm.json.deserializers.XmlJsonDeserializer;
 import io.jvm.json.serializers.XmlJsonSerializer;
@@ -59,11 +58,22 @@ public class Xml2JsonRoundTripTest {
 				final Document referenceRoundTrip_xml = parseXmlFile(referenceRoundtripFile_xml);															
 				
 				/* Convert to json and compare with reference conversion */
-				final String convertedJson = jsonStringFromXml(source_xml);				
+				final String convertedJson = jsonStringFromXml(source_xml);
+				
+//				System.out.println("Converted JSON:");
+//				System.out.println(convertedJson);
+//				System.out.println("Reference JSON:");
+//				System.out.println(referenceJson);
+				
 				assertJsonEquivalence(convertedJson, referenceJson);								
 
 				/* Convert back to XML, and compare with reference documents */
 				final Document roundtripXmlDocument = xmlDocumentfromJson(convertedJson);				
+				
+				System.out.println("Our roundtrip XML:");
+				printXmlDocument(roundtripXmlDocument);
+				System.out.println("Reference roundtrip xml:");
+				printXmlDocument(referenceRoundTrip_xml);
 				
 				assertXmlEquivalence("The reference roundtrip XML does not match the converted roundtrip XML",roundtripXmlDocument, referenceRoundTrip_xml);
 				assertXmlEquivalence("The roundtrip XML does not match the source XML",roundtripXmlDocument,source_xml);

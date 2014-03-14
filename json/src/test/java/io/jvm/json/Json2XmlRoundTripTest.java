@@ -60,6 +60,10 @@ public class Json2XmlRoundTripTest {
 
 		/* Convert to XML and compare with reference conversion */
 		final Document convertedXml = xmlDocumentFromJson(source_json);
+//		System.out.println("Converted XML:");
+//		printXmlDocument(convertedXml);
+//		System.out.println("Reference XML:");
+//		printXmlDocument(referenceXml);
 		assertXmlEquivalence("The converted XML does not match the reference XML", convertedXml, referenceXml);
 
 		/* Convert back to Json, and compare with reference documents */
@@ -90,7 +94,8 @@ public class Json2XmlRoundTripTest {
     }
 
     private static void assertXmlEquivalence(String message, Document lhs, Document rhs) {
-	XmlBruteForceComparator comparator = new XmlBruteForceComparator();
+	XmlBruteForceComparator comparator = new XmlBruteForceComparator();	
+	
 	assertTrue(message, comparator.compare(lhs.getDocumentElement(), rhs.getDocumentElement()) == 0);
     }
 
