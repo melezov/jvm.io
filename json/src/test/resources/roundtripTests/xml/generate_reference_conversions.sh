@@ -1,5 +1,5 @@
 #!/bin/bash
-# Convert source XMLs to JSON
+# Convert source XMLs to JSON, and vice versa - conversion scripts xml2json and json2xml need to be on the path
 cd source
 for f in *.xml
 do	
