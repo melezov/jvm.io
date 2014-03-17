@@ -14,7 +14,7 @@ import org.w3c.dom.NodeList;
 /**
  * A comparator for {@link org.w3c.dom.Element}, compares two XML subtrees. The
  * subtrees are considered equivalent if they contain the same nodes, having the
- * same attributes and values. The order of elements is irrelevant.
+ * same attributes and values. The order of elements is ignored.
  * 
  * For each of the two trees the compiler builds a list of paths root-to-leaf,
  * and compares the two lists.
@@ -55,7 +55,7 @@ public class XmlBruteForceComparator implements Comparator<Element> {
 
 	pathUpToNode.add(node);	
 	
-	if (node.hasChildNodes()) {
+	if (node.hasChildNodes()) {	    
 	    for (Node child : getListOfChildren(node)) {
 		buildPaths(allPaths, new ArrayList<Node>(pathUpToNode), child);		
 	    }
@@ -137,25 +137,34 @@ public class XmlBruteForceComparator implements Comparator<Element> {
     private boolean nodesEqual(Node node1, Node node2) {
 	if (node1 == null && node2 == null)
 	    return true;
-	else if (node1.getNodeName() == null && node2.getNodeName() == null)
-	    return true;
-	else if (node1.hasAttributes() != node2.hasAttributes())
+	else if(node1==null || node2 == null)
 	    return false;
-	else if ((node1.getNodeValue() != null && node2.getNodeValue() != null)
-		&& !node1.getNodeValue().equals(node2.getNodeValue()))
-	    return false;
-	else if (node1.hasAttributes() && node2.hasAttributes()
-		&& (node1.getAttributes().getLength() != node2.getAttributes().getLength()))
-	    return false;
-	else if (node1.getChildNodes().getLength() != node2.getChildNodes().getLength())
-	    return false;
-	else if (!node1.getNodeName().equals(node2.getNodeName()))
-	    return false;
-	else if (!nodesHaveEqualAttributes(node1, node2))
-	    return false;
-
-	return true;
+	else
+	    return nodesHaveEqualNames(node1, node2)
+		    && nodesHaveEqualNumberOfChildren(node1, node2)
+		    && nodesHaveEqualValues(node1, node2)
+		    && nodesHaveEqualAttributes(node1, node2);
+	}
+    
+    private boolean nodesHaveEqualValues(Node node1, Node node2){
+	String node1_name=node1.getNodeValue();
+	String node2_name=node2.getNodeValue();
+	
+	return equalsWithNull(node1_name, node2_name);
     }
+    
+    private boolean nodesHaveEqualNames(Node node1, Node node2){
+	String node1_name=node1.getNodeName();
+	String node2_name=node2.getNodeName();
+	
+	return equalsWithNull(node1_name, node2_name);
+    }
+	
+    private boolean nodesHaveEqualNumberOfChildren(Node node1, Node node2){
+	return node1.getChildNodes().getLength() == node2.getChildNodes().getLength();
+    }
+    
+    
 
     private boolean nodesHaveEqualAttributes(Node node1, Node node2) {
 	if (node1.hasAttributes() != node2.hasAttributes())
@@ -165,15 +174,13 @@ public class XmlBruteForceComparator implements Comparator<Element> {
 	else if (node1.getAttributes().getLength() != node2.getAttributes().getLength())
 	    return false;
 	else {
-
 	    for (Attr attr1 : getListOfAttributes(node1)) {
 		boolean found = false;
 		for (Attr attr2 : getListOfAttributes(node2)) {
-		    if (equalsWithNull(attr1.getName(), attr2.getName())
-			    && equalsWithNull(attr1.getValue(), attr2.getValue())) {
+		    if(attributesAreEqual(attr1,attr2)){
 			found = true;
 			break;
-		    }
+		    }		    
 		}
 		if (!found)
 		    return false;
@@ -181,6 +188,15 @@ public class XmlBruteForceComparator implements Comparator<Element> {
 	}
 
 	return true;
+    }
+    
+    private boolean attributesAreEqual(Attr attribute1, Attr attribute2){
+	if(attribute1==null && attribute2 == null)
+	    return true;
+	else if(attribute1==null || attribute2 == null)
+	    return false;
+	else return equalsWithNull(attribute1.getName(), attribute2.getName()) 
+		&& equalsWithNull(attribute1.getValue(), attribute2.getValue());
     }
 
     private List<Attr> getListOfAttributes(Node node) {
