@@ -25,7 +25,7 @@ public class JsonWriter {
                 case 0x0c: special = 'f'; break;
                 case 0x0d: special = 'r'; break;
                 case 0x22: special = '"'; break;
-                case 0x2f: special = '/'; break;
+                //case 0x2f: special = '/'; break;
                 case 0x5c: special = '\\'; break;
 
                 default:

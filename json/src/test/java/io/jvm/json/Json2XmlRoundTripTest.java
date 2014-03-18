@@ -1,15 +1,15 @@
 package io.jvm.json;
 
-import static org.junit.Assert.*;
-
-import io.jvm.json.deserializers.XmlJsonDeserializer;
-import io.jvm.json.serializers.XmlJsonSerializer;
+import static io.jvm.json.Helpers.getFileForResource;
+import static io.jvm.json.Helpers.jsonStringFromXml;
+import static io.jvm.json.Helpers.parseXmlFile;
+import static io.jvm.json.Helpers.stringFromFile;
+import static io.jvm.json.Helpers.xmlDocumentFromJson;
+import static org.junit.Assert.assertTrue;
 import io.jvm.xml.XmlBruteForceComparator;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
-import java.io.StringWriter;
 import java.net.URISyntaxException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -22,8 +22,6 @@ import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-
-import static io.jvm.json.Helpers.*;
 
 public class Json2XmlRoundTripTest {
 
@@ -60,10 +58,10 @@ public class Json2XmlRoundTripTest {
 
 		/* Convert to XML and compare with reference conversion */
 		final Document convertedXml = xmlDocumentFromJson(source_json);
-//		System.out.println("Converted XML:");
-//		printXmlDocument(convertedXml);
-//		System.out.println("Reference XML:");
-//		printXmlDocument(referenceXml);
+		// System.out.println("Converted XML:");
+		// printXmlDocument(convertedXml);
+		// System.out.println("Reference XML:");
+		// printXmlDocument(referenceXml);
 		assertXmlEquivalence("The converted XML does not match the reference XML", convertedXml, referenceXml);
 
 		/* Convert back to Json, and compare with reference documents */
@@ -74,27 +72,18 @@ public class Json2XmlRoundTripTest {
 		assertJsonEquivalence(referenceRoundTrip_json, source_json);
 	    }
 	}
-    }
-
-    private static Document xmlDocumentFromJson(String json) throws IOException {
-	JsonReader jr = new JsonReader(new StringReader(json));
-
-	return new XmlJsonDeserializer().fromJson(jr);
-    }
-
-    private static String jsonStringFromXml(final Document source_xml) throws IOException {
-
-	final StringWriter sw = new StringWriter();
-	new XmlJsonSerializer().toJson(new JsonWriter(sw), source_xml.getDocumentElement());
-	return sw.toString();
-    }
+    }    
 
     private static void assertJsonEquivalence(String lhs, String rhs) throws JSONException {
+	System.out.println();
+	System.out.println(lhs);
+	System.out.println(rhs);
+	System.out.println();
 	JSONAssert.assertEquals(lhs, rhs, false);
     }
 
     private static void assertXmlEquivalence(String message, Document lhs, Document rhs) {
-	XmlBruteForceComparator comparator = new XmlBruteForceComparator();	
+	XmlBruteForceComparator comparator = new XmlBruteForceComparator();
 	
 	assertTrue(message, comparator.compare(lhs.getDocumentElement(), rhs.getDocumentElement()) == 0);
     }

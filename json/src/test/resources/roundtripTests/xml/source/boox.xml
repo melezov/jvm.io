@@ -1,4 +1,5 @@
 <catalog>
+<![CDATA[kokodak]]>
    <book id="bk101">
       <author>Gambardella, Matthew</author>
       <title>XML Developer's Guide</title>
@@ -8,6 +9,7 @@
       <description>An in-depth look at creating applications 
       with XML.</description>
    </book>
+testoiejsoitjeo
    <book id="bk102">
       <author>Ralls, Kim</author>
       <title>Midnight Rain</title>
@@ -18,8 +20,11 @@
       an evil sorceress, and her own childhood to become queen 
       of the world.</description>
    </book>
-	petar petru plete petlju
+oiajweofiajwefoij
    <book id="bk103">
+<![CDATA[kukuriku]]>
+<![CDATA[kokodak]]>
+<![CDATA[mijau]]>
       <author>Corets, Eva</author>
       <title>Maeve Ascendant</title>
       <genre>Fantasy</genre>

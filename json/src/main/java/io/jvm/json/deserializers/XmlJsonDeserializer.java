@@ -8,8 +8,12 @@ import java.io.IOException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.w3c.dom.CDATASection;
+import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.Text;
 
 public class XmlJsonDeserializer implements JsonDeserializer<Document> {
 
@@ -82,11 +86,18 @@ public class XmlJsonDeserializer implements JsonDeserializer<Document> {
 	return reader.readToken() == '[';
     }
 
-    private void buildTextValue(Document document, Element node, JsonReader reader) throws IOException {
+    private boolean isTextContentNode(Node node) {
+	return (node.getNodeType() == Node.TEXT_NODE || node.getNodeType() == Node.COMMENT_NODE || node.getNodeType() == Node.CDATA_SECTION_NODE);
+    }
+
+    private void buildTextValue(Document document, Node node, JsonReader reader) throws IOException {
 	switch (reader.readToken()) {
 	case '"':
 	    /* String */
-	    node.appendChild(document.createTextNode(reader.readString()));
+	    if (isTextContentNode(node)) {
+		node.setNodeValue(reader.readString());
+	    } else
+		node.appendChild(document.createTextNode(reader.readString()));
 	    break;
 	case 't':
 	    /* true */
@@ -113,7 +124,7 @@ public class XmlJsonDeserializer implements JsonDeserializer<Document> {
      * given JsonReader. The node needs to exist, and the JsonReader needs to be
      * positioned at the Json element's value.
      */
-    private void buildNodeValueSubtree(Document document, Element parent, JsonReader reader) throws IOException {
+    private void buildNodeValueSubtree(Document document, Node parent, JsonReader reader) throws IOException {
 	if (valueIsObject(reader)) {
 	    buildObjectValueSubtree(document, parent, reader);
 	} else if (valueIsArray(reader)) {
@@ -140,64 +151,83 @@ public class XmlJsonDeserializer implements JsonDeserializer<Document> {
      *            the {@link JsonReader} we are currently using to read the Json
      *            stream
      */
-    private void buildObjectValueSubtree(Document document, Element parent, JsonReader reader) throws IOException{
-		reader.assertReadToken('{');
-		
-		boolean needsComma=false;
-		while (reader.readToken() != '}') {
-			if(needsComma){
-				reader.assertLastToken(',');
-				reader.next();
-			}
-			
-			String childNodeName = reader.readString();			
-			reader.assertReadToken(':');
-			
-			/* If it's an attribute node */
-			if(childNodeName.startsWith("@")){
-				String nodeValue = reader.readString();
-				parent.setAttribute(childNodeName.substring(1), nodeValue);
-			}
-			/* If it's a special node */
-			else if(childNodeName.startsWith("#")){
-				if(childNodeName.equals(commentNodeTag)){
-					String commentText = reader.readString();
-					parent.appendChild(document.createComment(commentText));
-				}
-				else if(childNodeName.equals(cDataNodeTag)){
-					String cDataText = reader.readString();
-					parent.appendChild(document.createCDATASection(cDataText));
-				}
-				else if(childNodeName.equals(textNodeTag)){
-					String textNodeData = reader.readString();
-					parent.appendChild(document.createTextNode(textNodeData));
-				}				
-				else if(childNodeName.equals(whitespaceNodeTag) || childNodeName.equals(significantWhitespaceNodeTag)){
-				    // Ignore
-				}
-				else{
-				    /* All other nodes whose name starts with a '#' are just serialised as text nodes, and otherwise ignored: */
-				    String unlikelyNodeData = reader.readString();
-				    parent.appendChild(document.createTextNode(unlikelyNodeData));
-				}			
-				    
-			}
-			/* If it's a processing instruction */
-			else if(childNodeName.startsWith("?")){
-			    String processingNodeData = reader.readString();			    
-			    parent.appendChild(document.createProcessingInstruction(childNodeName.substring(1), processingNodeData));
-			}				
-			/* If it's a normal node */
-			else{
-				Element childElement = document.createElement(childNodeName);
-				parent.appendChild(childElement);				
-				buildNodeValueSubtree(document, childElement, reader);
-			}
-			
-			needsComma=true;
+    private void buildObjectValueSubtree(Document document, Node parentNode, JsonReader reader) throws IOException {
+
+	reader.assertReadToken('{');
+
+	Element parent = (Element) parentNode;
+
+	boolean needsComma = false;
+	while (reader.readToken() != '}') {
+	    if (needsComma) {
+		reader.assertLastToken(',');
+		reader.next();
+	    }
+
+	    String childNodeName = reader.readString();
+	    reader.assertReadToken(':');
+
+	    /* If it's an attribute node */
+	    if (childNodeName.startsWith("@")) {
+		String nodeValue = reader.readString();
+		parent.setAttribute(childNodeName.substring(1), nodeValue);
+	    }
+	    /* If it's a special node */
+	    else if (childNodeName.startsWith("#")) {
+		if (childNodeName.equals(commentNodeTag)) {
+		    Comment childElement = document.createComment("");
+		    parent.appendChild(childElement);
+		    buildNodeValueSubtree(document, childElement, reader);
+		} else if (childNodeName.equals(cDataNodeTag)) {
+		    CDATASection childElement = document.createCDATASection("");
+		    parent.appendChild(childElement);
+		    buildNodeValueSubtree(document, childElement, reader);
+		} else if (childNodeName.equals(textNodeTag)) {
+		    Text childElement = document.createTextNode("");
+		    parent.appendChild(childElement);
+		    buildNodeValueSubtree(document, childElement, reader);
+		} else if (childNodeName.equals(whitespaceNodeTag)
+			|| childNodeName.equals(significantWhitespaceNodeTag)) {
+		    // Ignore
+		} else {
+		    /*
+		     * All other nodes whose name starts with a '#' are invalid
+		     * XML nodes, and thus ignored:
+		     */
 		}
-		reader.assertReadToken('}');
+
+	    }
+	    /* If it's a processing instruction */
+	    else if (childNodeName.startsWith("?")) {
+		String processingNodeData = reader.readString();
+		parent.appendChild(document.createProcessingInstruction(childNodeName.substring(1), processingNodeData));
+	    }
+	    /* If it's a normal node */
+	    else {
+		Element childElement = document.createElement(childNodeName);
+		parent.appendChild(childElement);
+		buildNodeValueSubtree(document, childElement, reader);
+	    }
+
+	    needsComma = true;
 	}
+	reader.assertReadToken('}');
+    }
+
+    private Node createChildNodeAccordingToName(Document document, String nodeName) {
+	Node childNode;
+
+	if (nodeName.equals(textNodeTag))
+	    childNode = document.createTextNode("");
+	else if (nodeName.equals(cDataNodeTag))
+	    childNode = document.createCDATASection("");
+	else if (nodeName.equals(commentNodeTag))
+	    childNode = document.createComment("");
+	else
+	    childNode = document.createElement(nodeName);
+	
+	return childNode;
+    }
 
     /**
      * Builds a sequence of XML elements from a Json array. The first element of
@@ -211,7 +241,7 @@ public class XmlJsonDeserializer implements JsonDeserializer<Document> {
      * @param reader
      * @throws IOException
      */
-    private void buildArrayValueSubtree(Document document, Element parent, String arrayNodesName, JsonReader reader)
+    private void buildArrayValueSubtree(Document document, Node parent, String arrayNodesName, JsonReader reader)
 	    throws IOException {
 	reader.assertReadToken('[');
 
@@ -222,7 +252,8 @@ public class XmlJsonDeserializer implements JsonDeserializer<Document> {
 		reader.next();
 	    }
 
-	    Element childNode = document.createElement(arrayNodesName);
+	    Node childNode = createChildNodeAccordingToName(document, arrayNodesName);
+
 	    parent.appendChild(childNode);
 	    buildNodeValueSubtree(document, childNode, reader);
 
