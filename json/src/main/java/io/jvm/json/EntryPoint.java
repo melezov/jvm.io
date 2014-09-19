@@ -1,3 +1,17 @@
+package io.jvm.json;
+
+import io.jvm.json.serializers.XmlJsonSerializer;
+
+import java.io.StringWriter;
+
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Element;
+
 public class EntryPoint {
     public static String toString(org.w3c.dom.Element doc)    {
         try
@@ -45,7 +59,7 @@ public class EntryPoint {
         final Element elem = toXml(input).getDocumentElement();
         System.out.println("INPUT: " + toString(elem));
 
-        final JsonSerializer<Element> xmlSerialization = new XMLJsonSerializer();
+        final JsonSerializer<Element> xmlSerialization = new XmlJsonSerializer();
 
         final StringWriter sw = new StringWriter();
         xmlSerialization.toJson(new JsonWriter(sw), elem);

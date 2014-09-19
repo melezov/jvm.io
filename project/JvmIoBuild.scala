@@ -28,7 +28,11 @@ object BuildSettings {
     name    := "jvm-json"
   , version := "0.0.1-SNAPSHOT"
   , initialCommands := "import io.jvm._"
-  , libraryDependencies += "com.dslplatform" % "dsl-client-http-apache" % "0.4.14"
+  , libraryDependencies ++= Seq(
+	"joda-time" % "joda-time" % "1.5.2",
+	"org.skyscreamer" % "jsonassert" % "1.2.3" % "test",
+	"xmlunit" % "xmlunit" % "1.4" % "test"
+	)
   )
 }
 
@@ -178,7 +182,7 @@ object Default {
       )
 
     , unmanagedSourceDirectories in Compile := Seq((scalaSource in Compile).value)
-    , unmanagedSourceDirectories in Test    := Seq((scalaSource in Test).value)
+//    , unmanagedSourceDirectories in Test    := Seq((scalaSource in Test).value)
 
     , EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
     )
