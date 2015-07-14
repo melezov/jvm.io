@@ -16,7 +16,7 @@ public interface Runner {
     public Runner setProxyOutput(final boolean proxyOutput);
     public Runner setProxyError(final boolean proxyError);
 
-// -----------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     public Output exec(
             final String[] params) throws IOException;
@@ -27,10 +27,14 @@ public interface Runner {
 
     public Output exec(
             final String[] params,
+            final File workingDir) throws IOException;
+
+    public Output exec(
+            final String[] params,
             final byte[] input,
             final File workingDir) throws IOException;
 
- // -----------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     public static class Output {
         public final int code;

@@ -1,8 +1,9 @@
 package io.jvm.jsad;
 
+import java.io.File;
 import java.io.IOException;
 
-public abstract class RunnerBase implements Runner {
+abstract class RunnerBase implements Runner {
     @Override
     public Runner doProxyInput() {
         return setProxyInput(true);
@@ -20,6 +21,13 @@ public abstract class RunnerBase implements Runner {
     public Output exec(
             final String[] params) throws IOException {
         return exec(params, null, null);
+    }
+
+    @Override
+    public Output exec(
+            final String[] params,
+            final File workingDir) throws IOException {
+        return exec(params, null, workingDir);
     }
 
     @Override

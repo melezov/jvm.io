@@ -4,9 +4,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Random;
 
-public class RunnerProxy extends RunnerBase {
+final class RunnerProxy extends RunnerBase {
     private final RunnerDirect runnerDirect;
     private final boolean proxyInput;
     private final boolean proxyOutput;
@@ -23,7 +24,7 @@ public class RunnerProxy extends RunnerBase {
         this.proxyError = proxyError;
     }
 
-// -----------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     @Override
     public boolean isProxyInput() {
@@ -42,20 +43,26 @@ public class RunnerProxy extends RunnerBase {
 
     @Override
     public Runner setProxyInput(final boolean proxyInput) {
+        if (proxyInput == this.proxyInput) return this;
+        if (!proxyInput && !proxyOutput && !proxyError) return runnerDirect;
         return new RunnerProxy(runnerDirect, proxyInput, proxyOutput, proxyError);
     }
 
     @Override
     public Runner setProxyOutput(final boolean proxyOutput) {
+        if (proxyOutput == this.proxyOutput) return this;
+        if (!proxyInput && !proxyOutput && !proxyError) return runnerDirect;
         return new RunnerProxy(runnerDirect, proxyInput, proxyOutput, proxyError);
     }
 
     @Override
     public Runner setProxyError(final boolean proxyError) {
+        if (proxyError == this.proxyError) return this;
+        if (!proxyInput && !proxyOutput && !proxyError) return runnerDirect;
         return new RunnerProxy(runnerDirect, proxyInput, proxyOutput, proxyError);
     }
 
- // -----------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     @Override
     public Output exec(
@@ -64,44 +71,43 @@ public class RunnerProxy extends RunnerBase {
             final File workingDir) throws IOException {
 
         if (!(proxyInput || proxyOutput || proxyError)) {
+            // If explicitly instantiated with all proxies turned off.
             return runnerDirect.exec(params, input, workingDir);
         }
 
+        final File absPath = workingDir.getAbsoluteFile();
         final OsProxy osProxy = OsProxy.getOsProxy();
         final StringBuilder proxyBody = new StringBuilder(osProxy.header);
 
         final String processTag =
-            String.format("%016X-%016X", System.currentTimeMillis(), random.nextLong());
+            String.format("%013d-%08X", System.currentTimeMillis(), random.nextInt());
 
         final File inputFile, outputFile, errorFile;
 
         if (proxyInput && input != null) {
-            inputFile = new File(workingDir, processTag + ".input");
-            write(inputFile, input);
-            proxyBody.append(" < \"").append(inputFile.getAbsolutePath()).append('"');
-        }
-        else {
+            inputFile = new File(absPath, processTag + ".input");
+            dump(inputFile, input);
+            proxyBody.append(" < \"").append(inputFile.getPath()).append('"');
+        } else {
             inputFile = null;
         }
 
         if (proxyOutput) {
-            outputFile = new File(workingDir, processTag + ".output");
-            proxyBody.append(" > \"").append(outputFile.getAbsolutePath()).append('"');
-        }
-        else {
+            outputFile = new File(absPath, processTag + ".output");
+            proxyBody.append(" > \"").append(outputFile.getPath()).append('"');
+        } else {
             outputFile = null;
         }
 
         if (proxyError) {
-            errorFile = new File(workingDir, processTag + ".error");
-            proxyBody.append(" 2> \"").append(errorFile.getAbsolutePath()).append('"');
-        }
-        else {
+            errorFile = new File(absPath, processTag + ".error");
+            proxyBody.append(" 2> \"").append(errorFile.getPath()).append('"');
+        } else {
             errorFile = null;
         }
 
-        final File proxyFile = new File(workingDir, processTag + osProxy.extension);
-        write(proxyFile, proxyBody.toString().getBytes(osProxy.encoding));
+        final File proxyFile = new File(absPath, processTag + osProxy.extension);
+        dump(proxyFile, proxyBody.toString().getBytes(osProxy.encoding));
 
         final String[] newParams = new String[osProxy.shell.length + params.length + 1];
         newParams[0] = proxyFile.getAbsolutePath();
@@ -126,7 +132,7 @@ public class RunnerProxy extends RunnerBase {
         return newOutput;
     }
 
-// -----------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     private static enum OsProxy {
         WINDOWS(new String[] { "cmd", "/c" }, "@echo off\r\n%*", "cp1250", ".bat"),
@@ -149,35 +155,37 @@ public class RunnerProxy extends RunnerBase {
         }
 
         private static boolean isWindows =
-            "\\".equals(System.getProperty("file.separator"));
+                System.getProperty("os.name")
+                    .toLowerCase(Locale.ENGLISH)
+                    .contains("windows");
 
         public static OsProxy getOsProxy() {
             return isWindows ? WINDOWS : LINUX;
         }
     }
 
-// -----------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
 
     private static Random random = new Random();
 
-    private static void write(final File file, final byte[] body) throws IOException {
+    /** Writes the byte array into a file */
+    private static void dump(final File file, final byte[] body) throws IOException {
         final FileOutputStream fos = new FileOutputStream(file);
         try {
             fos.write(body);
-        }
-        finally {
+        } finally {
             fos.close();
         }
     }
 
+    /** Reads the file into a byte array and deletes the file */
     private static byte[] slurp(final File file) throws IOException {
         final FileInputStream fis = new FileInputStream(file);
         try {
             final byte[] body = new byte[(int) file.length()];
             fis.read(body);
             return body;
-        }
-        finally {
+        } finally {
             fis.close();
             file.delete();
         }
