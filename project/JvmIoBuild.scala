@@ -20,9 +20,9 @@ object JvmIoBuild extends Build {
   lazy val util = Project(
     "util"
   , file("util")
-  , settings = Seq(
+  , settings = scalaSettings ++ Seq(
       name    := "jvm-util"
-    , version := "0.0.1-SNAPSHOT"
+    , version := "0.0.1"
     , initialCommands := "import io.jvm._"
     , libraryDependencies ++= Seq(
         scalaTest.value
@@ -34,44 +34,34 @@ object JvmIoBuild extends Build {
   lazy val jsad = Project(
     "jsad"
   , file("jsad")
-  , settings = Seq(
+  , settings = javaSettings ++ Seq(
       name    := "jvm-jsad"
-    , version := "0.0.1-SNAPSHOT"
+    , version := "0.1.0"
     , initialCommands := "import io.jvm.jsad._"
-    , libraryDependencies ++= Seq(
-        scalaTest.value
-      , junit
-      )
     )
   )
 
   lazy val xml = Project(
     "xml"
   , file("xml")
-  , settings = Seq(
+  , settings = javaSettings ++ Seq(
       name    := "jvm-xml"
-    , version := "0.0.1-SNAPSHOT"
+    , version := "0.0.1"
     , initialCommands := "import io.jvm._"
-    , libraryDependencies ++= Seq(
-        scalaTest.value
-      , junit
-      )
     )
   )
 
+/*
   lazy val json = Project(
     "json"
   , file("json")
   , settings = Seq(
       name    := "jvm-json"
-    , version := "0.0.1-SNAPSHOT"
+    , version := "0.0.1"
     , initialCommands := "import io.jvm._"
-    , libraryDependencies ++= Seq(
-        scalaTest.value
-      , junit
-      )
     )
   )
+*/  
 }
 
 //  ---------------------------------------------------------------------------
@@ -100,7 +90,10 @@ object Publishing {
 
   lazy val settings = Seq(
     publishTo := Some(if (version.value endsWith "-SNAPSHOT") ElementSnapshots else ElementReleases)
-  , credentials += Credentials(Path.userHome / ".config" / "jvm.io" / "nexus.config")
+  , credentials ++= {
+      val creds = Path.userHome / ".config" / "jvm.io" / "nexus.config"
+      if (creds.exists) Some(Credentials(creds)) else None
+    }.toSeq 
   , publishArtifact in (Compile, packageDoc) := false
   )
 }
