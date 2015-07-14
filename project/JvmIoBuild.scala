@@ -1,76 +1,76 @@
 import sbt._
 import Keys._
 
-object BuildSettings {
-  import Default._
-
-//  ###########################################################################
-
-  val bsUtil = javaSettings ++ Seq(
-    name    := "jvm-util"
-  , version := "0.0.1-SNAPSHOT"
-  , initialCommands := "import io.jvm._"
-  )
-
-  val bsJsad = javaSettings ++ Seq(
-    name    := "jvm-jsad"
-  , version := "0.0.1-SNAPSHOT"
-  , initialCommands := "import io.jvm.jsad._"
-  )
-
-  val bsXml = javaSettings ++ Seq(
-    name    := "jvm-xml"
-  , version := "0.0.1-SNAPSHOT"
-  , initialCommands := "import io.jvm._"
-  )
-
-  val bsJson = javaSettings ++ Seq(
-    name    := "jvm-json"
-  , version := "0.0.1-SNAPSHOT"
-  , initialCommands := "import io.jvm._"
-  , libraryDependencies += "com.dslplatform" % "dsl-client-http-apache" % "0.4.14"
-  )
-}
-
-//  ---------------------------------------------------------------------------
-
 object Dependencies {
-  val commonLibs = libraryDependencies <++= (version, scalaVersion) ( (v, sV) => Seq(
-    "org.scala-lang" % "scala-library" % sV % (if (v endsWith "SNAPSHOT") "compile" else "test")
-  , "org.scalatest" %% "scalatest" % "2.0" % "test"
-  , "junit" % "junit" % "4.11" % "test"
-  ))
+  val scalaTest = Def.setting { CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, 8)) => "org.scalatest" %% "scalatest" % "1.8" % "test"
+    case Some((2, 9)) => "org.scalatest" %% "scalatest" % "1.9.2" % "test"
+    case _            => "org.scalatest" %% "scalatest" % "2.2.5" % "test"
+  }}
+
+  val junit = "junit" % "junit" % "4.11" % "test"
 }
 
 //  ###########################################################################
 
 object JvmIoBuild extends Build {
-  import BuildSettings._
   import Default._
   import Dependencies._
 
   lazy val util = Project(
     "util"
   , file("util")
-  , settings = bsUtil :+ commonLibs
+  , settings = Seq(
+      name    := "jvm-util"
+    , version := "0.0.1-SNAPSHOT"
+    , initialCommands := "import io.jvm._"
+    , libraryDependencies ++= Seq(
+        scalaTest.value
+      , junit
+      )
+    )
   )
 
   lazy val jsad = Project(
     "jsad"
   , file("jsad")
-  , settings = bsJsad :+ commonLibs
+  , settings = Seq(
+      name    := "jvm-jsad"
+    , version := "0.0.1-SNAPSHOT"
+    , initialCommands := "import io.jvm.jsad._"
+    , libraryDependencies ++= Seq(
+        scalaTest.value
+      , junit
+      )
+    )
   )
 
   lazy val xml = Project(
     "xml"
   , file("xml")
-  , settings = bsXml :+ commonLibs
+  , settings = Seq(
+      name    := "jvm-xml"
+    , version := "0.0.1-SNAPSHOT"
+    , initialCommands := "import io.jvm._"
+    , libraryDependencies ++= Seq(
+        scalaTest.value
+      , junit
+      )
+    )
   )
 
   lazy val json = Project(
     "json"
   , file("json")
-  , settings = bsJson :+ commonLibs
+  , settings = Seq(
+      name    := "jvm-json"
+    , version := "0.0.1-SNAPSHOT"
+    , initialCommands := "import io.jvm._"
+    , libraryDependencies ++= Seq(
+        scalaTest.value
+      , junit
+      )
+    )
   )
 }
 
@@ -89,9 +89,7 @@ object Resolvers {
 
   lazy val settings = Seq(
     resolvers := Seq(ElementNexus)
-  , externalResolvers <<= resolvers map { r =>
-      Resolver.withDefaultResolvers(r, mavenCentral = false)
-    }
+  , externalResolvers := Resolver.withDefaultResolvers(resolvers.value, mavenCentral = false)
   )
 }
 
@@ -101,7 +99,7 @@ object Publishing {
   import Repositories._
 
   lazy val settings = Seq(
-    publishTo := Some(if (version.value endsWith "SNAPSHOT") ElementSnapshots else ElementReleases)
+    publishTo := Some(if (version.value endsWith "-SNAPSHOT") ElementSnapshots else ElementReleases)
   , credentials += Credentials(Path.userHome / ".config" / "jvm.io" / "nexus.config")
   , publishArtifact in (Compile, packageDoc) := false
   )
@@ -111,39 +109,49 @@ object Publishing {
 
 object Default {
   //Eclipse plugin
-  import com.typesafe.sbteclipse.plugin.EclipsePlugin._
-
+  import com.typesafe.sbteclipse.plugin.EclipsePlugin.{ projectSettings => eclipseSettings, _ }
   //Dependency graph plugin
   import net.virtualvoid.sbt.graph.Plugin._
 
-  val scala2_8 = Seq(
-    "-unchecked"
+  private val scala2_8 = Seq(
+    "-encoding", "UTF-8"
   , "-deprecation"
   , "-optimise"
-  , "-encoding", "UTF-8"
-  , "-Xcheckinit"
-  , "-Xfatal-warnings"
+  , "-unchecked"
+  , "-Xno-forwarders"
   , "-Yclosure-elim"
   , "-Ydead-code"
   , "-Yinline"
   )
 
-  val scala2_9 = Seq(
+  private val scala2_9 = Seq(
     "-Xmax-classfile-name", "72"
+  , "-Ywarn-dead-code"
   )
 
-  val scala2_9_1 = Seq(
-    "-Yrepl-sync"
-  , "-Xlint"
+  private val scala2_9_1 = Seq(
+    "-Xlint"
   , "-Xverify"
-  , "-Ywarn-all"
+  , "-Yrepl-sync"
+  , "-Ywarn-inaccessible"
+  , "-Ywarn-nullary-override"
+  , "-Ywarn-nullary-unit"
+  , "-Ywarn-numeric-widen"
   )
 
-  val scala2_10 = Seq(
+  private val scala2_10 = Seq(
     "-feature"
-  , "-language:postfixOps"
-  , "-language:implicitConversions"
   , "-language:existentials"
+  , "-language:implicitConversions"
+  , "-language:postfixOps"
+  , "-language:reflectiveCalls"
+  , "-Ywarn-adapted-args"
+  )
+
+  private val scala2_11 = Seq(
+    "-Yconst-opt"
+  , "-Ywarn-infer-any"
+  , "-Ywarn-unused"
   )
 
   lazy val scalaSettings =
@@ -154,32 +162,39 @@ object Default {
     Publishing.settings ++ Seq(
       organization := "io.jvm"
 
-    , scalaVersion := crossScalaVersions.value.last
     , crossScalaVersions := Seq(
-        "2.8.0", "2.8.1", "2.8.2", "2.8.3"
-      , "2.9.0", "2.9.0-1", "2.9.1", "2.9.1-1", "2.9.2", "2.9.3"
-      , "2.10.3"
+        /* Legacy versions, compilation requires running SBT with Java < 8 */
+//        "2.8.1", "2.8.2"
+//      , "2.9.0", "2.9.0-1", "2.9.1", "2.9.1-1", "2.9.2", "2.9.3"
+      ) ++ Seq(
+        /* Use case versions */
+        "2.10.5"
+      , "2.11.7"
       )
-    , scalacOptions <<= scalaVersion map ( sV => scala2_8 ++ (sV match {
-          case x if (x startsWith "2.10.")                => scala2_9 ++ scala2_9_1 ++ scala2_10
-          case x if (x startsWith "2.9.") && x >= "2.9.1" => scala2_9 ++ scala2_9_1
-          case x if (x startsWith "2.9.")                 => scala2_9
-          case _ => Nil
-        } )
-      )
+    , scalaVersion := crossScalaVersions.value.last
+    , scalacOptions := scala2_8 ++ (scalaVersion.value match {
+        case x if (x startsWith "2.11.")                => scala2_9 ++ scala2_9_1 ++ scala2_10 ++ scala2_11
+        case x if (x startsWith "2.10.")                => scala2_9 ++ scala2_9_1 ++ scala2_10
+        case x if (x startsWith "2.9.") && x >= "2.9.1" => scala2_9 ++ scala2_9_1
+        case x if (x startsWith "2.9.")                 => scala2_9
+        case _ => Nil
+      })
 
-    , javaHome := sys.env.get("JDK16_HOME").map(file(_))
     , javacOptions := Seq(
-        "-deprecation"
-      , "-encoding", "UTF-8"
-      , "-Xlint:unchecked"
-      , "-source", "1.6"
+        "-encoding", "UTF-8"
+      , "-deprecation"
+      , "-Xlint"
       , "-target", "1.6"
-      )
+      , "-source", "1.6"
+      ) ++ (sys.env.get("JDK16_HOME") match {
+        case Some(jdk16Home) => Seq("-bootclasspath", jdk16Home + "/jre/lib/rt.jar")
+        case _ => Nil
+      })
 
     , unmanagedSourceDirectories in Compile := Seq((scalaSource in Compile).value)
     , unmanagedSourceDirectories in Test    := Seq((scalaSource in Test).value)
 
+    , EclipseKeys.executionEnvironment := Some(EclipseExecutionEnvironment.JavaSE16)
     , EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
     )
 
