@@ -108,7 +108,8 @@ final class RunnerProxy extends RunnerBase {
 
         final File proxyFile = new File(absPath, processTag + osProxy.extension);
         dump(proxyFile, proxyBody.toString().getBytes(osProxy.encoding));
-        proxyFile.setExecutable(true,true);
+        proxyFile.setExecutable(true, true);
+
         final String[] newParams = new String[osProxy.shell.length + params.length + 1];
         newParams[0] = proxyFile.getAbsolutePath();
         System.arraycopy(osProxy.shell, 0, newParams, 1, osProxy.shell.length);

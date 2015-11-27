@@ -36,7 +36,7 @@ object JvmIoBuild extends Build {
   , file("jsad")
   , settings = javaSettings ++ Seq(
       name    := "jvm-jsad"
-    , version := "0.1.0"
+    , version := "0.1.1"
     , initialCommands := "import io.jvm.jsad._"
     )
   )
@@ -161,7 +161,7 @@ object Default {
 //      , "2.9.0", "2.9.0-1", "2.9.1", "2.9.1-1", "2.9.2", "2.9.3"
       ) ++ Seq(
         /* Use case versions */
-        "2.10.5"
+        "2.10.6"
       , "2.11.7"
       )
     , scalaVersion := crossScalaVersions.value.last
